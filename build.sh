@@ -1,0 +1,1 @@
+go build "-o" "./bin/dirtrallybot" "./cmd/dirtrallybot/dirtrallybot.go"
