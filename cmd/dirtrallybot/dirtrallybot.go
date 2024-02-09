@@ -18,10 +18,10 @@ func main() {
 		log.Fatalf("error creating session: %v", err)
 	}
 
-	bot.RegisterHandlers(session)
+	bot.RegisterHandlers(session, true)
 	bot.CreateCommands(botConfig, session)
 
-	session.Identify.Intents = discordgo.IntentsGuildMessages
+	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
 
 	err = session.Open()
 	if err != nil {

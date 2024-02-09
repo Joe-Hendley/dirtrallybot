@@ -167,3 +167,81 @@ func (m Model) Weather() []weather.Model {
 	}
 	return []weather.Model{}
 }
+
+func WeightedMap() map[Model]int {
+	locations := make(map[Model]int)
+	for _, l := range List() {
+		locations[l] = 0
+	}
+
+	return locations
+}
+
+type weatherStringMap = map[weather.Model]string
+type locationWeatherStringMap = map[Model]weatherStringMap
+
+const (
+	DAYCLEARDRY        = "☀️ **Daytime / Clear / Dry Surface**"
+	DAYCLOUDYWET       = "⛅💧 **Daytime / Cloudy / Wet Surface**"
+	DAYCLOUDYSNOW      = "⛅❄️ **Daytime / Cloudy / Snow**"
+	DAYHEAVYRAINWET    = "⛅🌧️ **Daytime / Heavy Rain / Wet Surface**"
+	DUSKCLOUDYWET      = "🌆☁️💧 **Dusk / Cloudy / Wet Surface**"
+	DUSKHEAVYRAINWET   = "🌆🌧️ **Dusk / Heavy Rain / Wet Surface**"
+	SUNSETCLOUDYWET    = "🌇☁️💧 **Sunset / Cloudy / Wet Surface**"
+	SUNSETHEAVYRAINWET = "🌇🌧️ **Sunset / Heavy Rain / Wet Surface**"
+)
+
+func WeatherStrings() locationWeatherStringMap {
+	return locationWeatherStringMap{
+		ARG: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DUSKHEAVYRAINWET,
+		},
+		AUS: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		FIN: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DUSKCLOUDYWET,
+		},
+		DEU: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYHEAVYRAINWET,
+		},
+		GRC: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: SUNSETHEAVYRAINWET,
+		},
+		MCO: {
+			weather.DRY: DAYCLEARDRY,
+		},
+		NZL: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		POL: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: SUNSETCLOUDYWET,
+		},
+		SCO: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		ESP: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		SWE: {
+			weather.SNOW: DAYCLOUDYSNOW,
+		},
+		USA: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		WAL: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: SUNSETCLOUDYWET,
+		},
+	}
+}

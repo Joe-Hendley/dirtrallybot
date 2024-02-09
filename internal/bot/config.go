@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 )
 
@@ -20,11 +19,8 @@ var (
 	token string = DEFAULTTOKEN
 )
 
-var s *discordgo.Session
-
 func init() {
-	var err error
-	err = loadEnv()
+	err := loadEnv()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,7 +41,7 @@ func NewConfig() Config {
 func loadEnv() error {
 	err := godotenv.Load()
 	if err != nil {
-		return fmt.Errorf("Error loading .env file: %w", err)
+		return fmt.Errorf("error loading .env file: %w", err)
 	}
 
 	token = os.Getenv("token")

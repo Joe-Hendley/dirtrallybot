@@ -1,14 +1,19 @@
 package bot
 
 import (
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/internal/handlers/cars"
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/internal/handlers/ready"
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/internal/handlers/stages"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/debug"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/newstage"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/ready"
 	"github.com/bwmarrin/discordgo"
 )
 
-func RegisterHandlers(session *discordgo.Session) {
-	session.AddHandler(ready.Handler)
-	session.AddHandler(cars.Handler)
-	session.AddHandler(stages.Handler)
+func RegisterHandlers(s *discordgo.Session, useDebug bool) {
+	s.AddHandler(ready.Handler)
+
+	if useDebug {
+		s.AddHandler(debug.Handler)
+	}
+
+	s.AddHandler(newstage.Handler)
+	s.AddHandler(newstage.Interaction)
 }

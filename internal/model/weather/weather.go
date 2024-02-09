@@ -21,21 +21,9 @@ func (m Model) String() string {
 	case DRY:
 		return "dry"
 	case WET:
-		return "WET"
+		return "wet"
 	case SNOW:
-		return "SNOW"
-	}
-	return "invalid weather"
-}
-
-func (m Model) Emoji() string {
-	switch m {
-	case DRY:
-		return "☀️"
-	case WET:
-		return "💧"
-	case SNOW:
-		return "❄️"
+		return "snow"
 	}
 	return "invalid weather"
 }
