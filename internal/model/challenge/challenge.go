@@ -25,7 +25,7 @@ type Model struct {
 	Weather     weather.Model
 	Car         car.Model
 	events      []any        // TODO EVENTTYPE
-	completions []completion // implicitly ordered, maybe change to explicit?
+	completions []completion // ordered by submission time, but timestamp is on the event so we could add it to the completion
 }
 
 type completion struct {
@@ -78,7 +78,7 @@ func (m *Model) TopThreeFancyString() string {
 	}
 
 	if len(m.completions) == 1 {
-		return fmt.Sprintf("🥇 **%s** %s", formatDuration(m.completions[0].duration), m.completions[0].userDisplayName)
+		return fmt.Sprintf("🥇 **%s**\t%s", formatDuration(m.completions[0].duration), m.completions[0].userDisplayName)
 	}
 
 	sorted := make([]completion, len(m.completions))
@@ -87,8 +87,9 @@ func (m *Model) TopThreeFancyString() string {
 		sorted[i] = m.completions[i]
 	}
 
-	// VSCode running go-staticcheck & golangci-lint fighting it out? sheesh
+	// go-staticcheck & golangci-lint fighting it out? sheesh
 	// TODO - sort out this linter nonsense, probably refactor the above
+	// could sort a list of indices instead?
 
 	slices.SortFunc(sorted, func(a, b completion) int { return int(a.duration - b.duration) })
 
@@ -96,23 +97,25 @@ func (m *Model) TopThreeFancyString() string {
 
 	if len(sorted) == 2 {
 		return strings.Join([]string{
-			fmt.Sprintf("🥇 *%s* %s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
-			fmt.Sprintf("🥈 *%s* %s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
+			fmt.Sprintf("🥇 **%s**\t%s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
+			fmt.Sprintf("🥈 **%s**\t%s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
 		},
 			"\n")
 	}
 	return strings.Join([]string{
-		fmt.Sprintf("🥇 *%s* %s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
-		fmt.Sprintf("🥈 *%s* %s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
-		fmt.Sprintf("🥉 *%s* %s", formatDuration(sorted[2].duration), sorted[2].userDisplayName),
+		fmt.Sprintf("🥇\t**%-s**\t\t%s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
+		fmt.Sprintf("🥈\t**%-s**\t\t%s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
+		fmt.Sprintf("🥉\t**%-s**\t\t%s", formatDuration(sorted[2].duration), sorted[2].userDisplayName),
 	},
 		"\n")
 }
 
 func formatDuration(d time.Duration) string {
-	// TODO is there a better way?
-	minutes := d.Truncate(time.Minute)
-	seconds := (d - minutes).Truncate(time.Second)
-	milliseconds := (d - d.Truncate(seconds)).Truncate(time.Millisecond)
-	return fmt.Sprintf("%2.f:%2.f.%d", minutes.Minutes(), seconds.Seconds(), milliseconds.Milliseconds())
+	var (
+		minutes      = d.Truncate(time.Minute)
+		seconds      = (d - minutes).Truncate(time.Second)
+		milliseconds = (d - d.Truncate(seconds)).Truncate(time.Millisecond)
+	)
+
+	return fmt.Sprintf("%2.f:%2X.f.%d", minutes.Minutes(), seconds.Seconds(), milliseconds.Milliseconds())
 }
