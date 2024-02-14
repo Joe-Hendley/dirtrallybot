@@ -8,10 +8,10 @@ type base struct {
 	challengeID string // is this needed?
 }
 
-func NewEvent(id string) base {
+func New(id string, timestamp int64) base {
 	return base{
 		id:        id,
-		timestamp: time.Now().UTC(),
+		timestamp: time.Unix(timestamp, 0),
 	}
 }
 
@@ -27,25 +27,31 @@ func (b base) ChallengeID() string {
 	return b.challengeID
 }
 
-type completion struct {
+type Completion struct {
 	base
-	userID   string
-	duration time.Duration
+	userID          string
+	userDisplayName string
+	duration        time.Duration
 }
 
 // Completion holds the details of a user-reported challenge completion
-func (b base) Completion(userID string, duration time.Duration) completion {
-	return completion{
-		base:     b,
-		userID:   userID,
-		duration: duration,
+func (b base) AsCompletion(userID, userDisplayName string, duration time.Duration) Completion {
+	return Completion{
+		base:            b,
+		userID:          userID,
+		userDisplayName: userDisplayName,
+		duration:        duration,
 	}
 }
 
-func (c completion) UserID() string {
+func (c Completion) UserID() string {
 	return c.userID
 }
 
-func (c completion) Duration() time.Duration {
+func (c Completion) UserDisplayName() string {
+	return c.userDisplayName
+}
+
+func (c Completion) Duration() time.Duration {
 	return c.duration
 }

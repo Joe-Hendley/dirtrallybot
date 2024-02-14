@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 )
 
 type distance bool
@@ -17,7 +16,6 @@ const (
 type Model struct {
 	name     string
 	location location.Model
-	weather  weather.Model
 	distance distance
 }
 

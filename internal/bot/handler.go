@@ -16,4 +16,5 @@ func RegisterHandlers(s *discordgo.Session, useDebug bool) {
 
 	s.AddHandler(newstage.Handler)
 	s.AddHandler(newstage.Interaction)
+	s.AddHandler(newstage.HandleCompletionRequest)
 }
