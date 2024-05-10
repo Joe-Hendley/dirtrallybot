@@ -117,5 +117,9 @@ func formatDuration(d time.Duration) string {
 		milliseconds = (d - d.Truncate(seconds)).Truncate(time.Millisecond)
 	)
 
-	return fmt.Sprintf("%2.f:%2X.f.%d", minutes.Minutes(), seconds.Seconds(), milliseconds.Milliseconds())
+	minuteComponent := fmt.Sprintf("%2.f", minutes.Minutes())
+	secondComponent := fmt.Sprintf("%02.f", seconds.Seconds())
+	millisecondComponent := fmt.Sprintf("%d", milliseconds.Milliseconds())
+
+	return minuteComponent + ":" + secondComponent + "." + millisecondComponent
 }
