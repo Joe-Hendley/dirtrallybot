@@ -44,25 +44,25 @@ func Handler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
 					discordgo.Button{
-						Emoji:    discordgo.ComponentEmoji{Name: "🏁"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "🏁"},
 						Style:    discordgo.PrimaryButton,
 						Disabled: false,
 						CustomID: completedID,
 					},
 					discordgo.Button{
-						Emoji:    discordgo.ComponentEmoji{Name: "⏱️"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "⏱️"},
 						Style:    discordgo.SecondaryButton,
 						Disabled: true,
 						CustomID: timesID,
 					},
 					discordgo.Button{
-						Emoji:    discordgo.ComponentEmoji{Name: "👍"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "👍"},
 						Style:    discordgo.SuccessButton,
 						Disabled: true,
 						CustomID: goodID,
 					},
 					discordgo.Button{
-						Emoji:    discordgo.ComponentEmoji{Name: "👎"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "👎"},
 						Style:    discordgo.DangerButton,
 						Disabled: true,
 						CustomID: badID,
@@ -181,8 +181,7 @@ func HandleCompletionRequest(s *discordgo.Session, i *discordgo.InteractionCreat
 		if member.Nick != "" {
 			displayName = member.Nick
 		} else {
-			displayName = member.User.Username
-			// TODO update to @master / 0.28 to get User.GlobalName
+			displayName = member.User.GlobalName
 		}
 	}
 
