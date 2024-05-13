@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,25 +15,27 @@ func main() {
 	session, err := discordgo.New("Bot " + botConfig.Token)
 
 	if err != nil {
-		log.Fatalf("error creating session: %v", err)
+		slog.Error("error creating session", "err", err)
+		os.Exit(1)
 	}
 
-	bot.RegisterHandlers(session, true)
+	bot.RegisterHandlers(session)
 	bot.CreateCommands(botConfig, session)
 
 	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
 
 	err = session.Open()
 	if err != nil {
-		log.Fatalf("error opening connection: %v", err)
+		slog.Error("error opening connection", "err", err)
+		os.Exit(1)
 	}
 
-	log.Println("Bot is running. Press CTL-C to exit.")
+	slog.Info("Bot is running. Press CTL-C to exit.")
 	defer session.Close()
 
 	waitForInterrupt()
 
-	log.Println("\nBot shutting down")
+	slog.Info("Bot shutting down")
 
 	bot.CleanupCommands(botConfig, session)
 }

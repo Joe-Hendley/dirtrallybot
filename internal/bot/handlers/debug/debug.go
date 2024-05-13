@@ -1,7 +1,7 @@
 package debug
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
@@ -10,21 +10,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func Handler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
+func HandleCars(s *discordgo.Session, m *discordgo.MessageCreate) {
+	slog.Debug("printing cars")
 
-	switch m.Content {
-	case "!cars":
-		handleCars(s, m)
-
-	case "!stages":
-		handleStages(s, m)
-	}
-}
-
-func handleCars(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg := ""
 	for _, class := range class.List() {
 		for _, car := range car.InClass(class) {
@@ -33,7 +21,7 @@ func handleCars(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if len(msg)+len(buf) > 2000 {
 				_, err := s.ChannelMessageSend(m.ChannelID, msg)
 				if err != nil {
-					log.Printf("error sending cars message: %v\n", err)
+					slog.Error("sending cars message", "err", err)
 				}
 
 				msg = buf
@@ -44,13 +32,14 @@ func handleCars(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	_, err := s.ChannelMessageSend(m.ChannelID, msg)
 	if err != nil {
-		log.Printf("error sending cars message: %v\n", err)
+		slog.Error("sending cars message", "err", err)
 	}
 }
 
-func handleStages(s *discordgo.Session, m *discordgo.MessageCreate) {
-	msg := ""
+func HandleStages(s *discordgo.Session, m *discordgo.MessageCreate) {
+	slog.Debug("sending stages message")
 
+	msg := ""
 	for _, location := range location.List() {
 		for _, stage := range stage.AtLocation(location) {
 			buf := stage.FancyString() + "\n"
@@ -58,7 +47,7 @@ func handleStages(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if len(msg)+len(buf) > 2000 {
 				_, err := s.ChannelMessageSend(m.ChannelID, msg)
 				if err != nil {
-					log.Printf("error sending stages message: %v\n", err)
+					slog.Error("sending stages message", "err", err)
 				}
 
 				msg = buf
@@ -70,6 +59,6 @@ func handleStages(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, err := s.ChannelMessageSend(m.ChannelID, msg)
 	if err != nil {
-		log.Printf("error sending stages message: %v\n", err)
+		slog.Error("sending stages message", "err", err)
 	}
 }

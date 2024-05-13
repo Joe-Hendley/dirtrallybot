@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/feedback/event"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/event"
 )
 
 func TestApplyEvent(t *testing.T) {
@@ -44,7 +44,7 @@ func TestApplyEvent(t *testing.T) {
 	})
 
 	t.Run("completion is applied to challenge", func(t *testing.T) {
-		challengeEvent := event.New("", 0).AsCompletion("userID", "userDisplayName", time.Minute)
+		challengeEvent := event.New("", 0).AsCompletion("userID", time.Minute)
 
 		store := newStoreWithEvent(t, challengeEvent)
 

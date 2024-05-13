@@ -2,15 +2,17 @@ package challenge
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/feedback/event"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/event"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
+	"github.com/bwmarrin/discordgo"
 )
 
 type Randomiser interface {
@@ -29,9 +31,8 @@ type Model struct {
 }
 
 type completion struct {
-	userID          string
-	userDisplayName string
-	duration        time.Duration
+	userID   string
+	duration time.Duration
 }
 
 func New(r Randomiser) *Model {
@@ -65,20 +66,20 @@ func (m *Model) ApplyEvent(e any) error { // TODO EVENTTYPE
 	switch t := e.(type) {
 	case event.Completion:
 		m.events = append(m.events, e)
-		m.completions = append(m.completions, completion{userID: e.(event.Completion).UserID(), userDisplayName: e.(event.Completion).UserDisplayName(), duration: e.(event.Completion).Duration()})
+		m.completions = append(m.completions, completion{userID: e.(event.Completion).UserID(), duration: e.(event.Completion).Duration()})
 		return nil
 	default:
 		return fmt.Errorf("type %s not a valid event", t)
 	}
 }
 
-func (m *Model) TopThreeFancyString() string {
+func (m *Model) TopThreeFancyString(s *discordgo.Session, guildID string) string {
 	if len(m.completions) < 1 {
 		return ""
 	}
 
 	if len(m.completions) == 1 {
-		return fmt.Sprintf("🥇 **%s**\t%s", formatDuration(m.completions[0].duration), m.completions[0].userDisplayName)
+		return fmt.Sprintf("🥇 **%s**\t%s", formatDuration(m.completions[0].duration), getCurrentDisplayName(s, guildID, m.completions[0].userID))
 	}
 
 	sorted := make([]completion, len(m.completions))
@@ -93,19 +94,17 @@ func (m *Model) TopThreeFancyString() string {
 
 	slices.SortFunc(sorted, func(a, b completion) int { return int(a.duration - b.duration) })
 
-	fmt.Println(sorted)
-
 	if len(sorted) == 2 {
 		return strings.Join([]string{
-			fmt.Sprintf("🥇 **%s**\t%s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
-			fmt.Sprintf("🥈 **%s**\t%s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
+			fmt.Sprintf("🥇 **%s**\t%s", formatDuration(sorted[0].duration), getCurrentDisplayName(s, guildID, m.completions[0].userID)),
+			fmt.Sprintf("🥈 **%s**\t%s", formatDuration(sorted[1].duration), getCurrentDisplayName(s, guildID, m.completions[1].userID)),
 		},
 			"\n")
 	}
 	return strings.Join([]string{
-		fmt.Sprintf("🥇\t**%-s**\t\t%s", formatDuration(sorted[0].duration), sorted[0].userDisplayName),
-		fmt.Sprintf("🥈\t**%-s**\t\t%s", formatDuration(sorted[1].duration), sorted[1].userDisplayName),
-		fmt.Sprintf("🥉\t**%-s**\t\t%s", formatDuration(sorted[2].duration), sorted[2].userDisplayName),
+		fmt.Sprintf("🥇\t**%-s**\t\t%s", formatDuration(sorted[0].duration), getCurrentDisplayName(s, guildID, m.completions[0].userID)),
+		fmt.Sprintf("🥈\t**%-s**\t\t%s", formatDuration(sorted[1].duration), getCurrentDisplayName(s, guildID, m.completions[1].userID)),
+		fmt.Sprintf("🥉\t**%-s**\t\t%s", formatDuration(sorted[2].duration), getCurrentDisplayName(s, guildID, m.completions[2].userID)),
 	},
 		"\n")
 }
@@ -114,7 +113,7 @@ func formatDuration(d time.Duration) string {
 	var (
 		minutes      = d.Truncate(time.Minute)
 		seconds      = (d - minutes).Truncate(time.Second)
-		milliseconds = (d - d.Truncate(seconds)).Truncate(time.Millisecond)
+		milliseconds = (d - minutes - seconds).Truncate(time.Millisecond)
 	)
 
 	minuteComponent := fmt.Sprintf("%2.f", minutes.Minutes())
@@ -122,4 +121,57 @@ func formatDuration(d time.Duration) string {
 	millisecondComponent := fmt.Sprintf("%d", milliseconds.Milliseconds())
 
 	return minuteComponent + ":" + secondComponent + "." + millisecondComponent
+}
+
+func (m *Model) FancyListCompletions(s *discordgo.Session, guildID string) string {
+	if len(m.completions) == 0 {
+		return "no completions logged"
+	}
+
+	userCompletions := make(map[string][]time.Duration)
+
+	for _, completion := range m.completions {
+		userCompletions[completion.userID] = append(userCompletions[completion.userID], completion.duration)
+	}
+
+	type user struct {
+		id          string
+		displayName string
+	}
+
+	users := []user{}
+	for userID := range userCompletions {
+		users = append(users, user{id: userID, displayName: getCurrentDisplayName(s, guildID, userID)})
+	}
+
+	slices.SortFunc(users, func(a user, b user) int {
+		if a.displayName < b.displayName {
+			return -1
+		}
+		if a.displayName > b.displayName {
+			return 1
+		}
+		return 0
+	})
+
+	buf := strings.Builder{}
+
+	for _, user := range users {
+		buf.Write([]byte("**" + user.displayName + "**\n"))
+		for _, completion := range userCompletions[user.id] {
+			buf.Write([]byte(formatDuration(completion) + "\n"))
+		}
+	}
+
+	return buf.String()
+}
+
+func getCurrentDisplayName(s *discordgo.Session, guildID, userID string) string {
+	u, err := s.GuildMember(guildID, userID)
+	if err != nil {
+		slog.Error("getting display name", "guildID", guildID, "userID", userID, "err", err)
+		return userID
+	}
+
+	return u.DisplayName()
 }

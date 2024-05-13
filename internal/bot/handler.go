@@ -1,20 +1,16 @@
 package bot
 
 import (
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/debug"
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/newstage"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/message"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/newchallenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/ready"
 	"github.com/bwmarrin/discordgo"
 )
 
-func RegisterHandlers(s *discordgo.Session, useDebug bool) {
+func RegisterHandlers(s *discordgo.Session) {
 	s.AddHandler(ready.Handler)
 
-	if useDebug {
-		s.AddHandler(debug.Handler)
-	}
-
-	s.AddHandler(newstage.Handler)
-	s.AddHandler(newstage.Interaction)
-	s.AddHandler(newstage.HandleCompletionRequest)
+	s.AddHandler(message.HandleCreate)
+	s.AddHandler(newchallenge.Interaction)
+	s.AddHandler(newchallenge.HandleCompletionRequest)
 }
