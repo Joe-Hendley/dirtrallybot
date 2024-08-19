@@ -15,7 +15,7 @@ func main() {
 	session, err := discordgo.New("Bot " + botConfig.Token)
 
 	if err != nil {
-		slog.Error("error creating session", "err", err)
+		slog.Error("creating session", "err", err)
 		os.Exit(1)
 	}
 
@@ -26,7 +26,7 @@ func main() {
 
 	err = session.Open()
 	if err != nil {
-		slog.Error("error opening connection", "err", err)
+		slog.Error("opening connection", "err", err)
 		os.Exit(1)
 	}
 
