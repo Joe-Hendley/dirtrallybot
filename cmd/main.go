@@ -37,7 +37,7 @@ func main() {
 
 	err = session.Open()
 	if err != nil {
-		slog.Error("opening connection: %w", err)
+		slog.Error("opening connection:", "err", err)
 		os.Exit(1)
 	}
 
