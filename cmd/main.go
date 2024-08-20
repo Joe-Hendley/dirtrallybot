@@ -7,26 +7,37 @@ import (
 	"syscall"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot"
+	"github.com/Joe-Hendley/dirtrallybot/internal/config"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store"
 	"github.com/bwmarrin/discordgo"
 )
 
 func main() {
-	botConfig := bot.NewConfig()
-	session, err := discordgo.New("Bot " + botConfig.Token)
-
+	cfg := config.New()
+	store, err := store.New(cfg)
 	if err != nil {
-		slog.Error("creating session", "err", err)
+		slog.Error("initialising store:", "err", err)
 		os.Exit(1)
 	}
 
-	bot.RegisterHandlers(session)
-	bot.CreateCommands(botConfig, session)
+	session, err := discordgo.New("Bot " + cfg.Token)
 
-	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
+	if err != nil {
+		slog.Error("starting session: %w", "err", err)
+		os.Exit(1)
+	}
+
+	rallyBot, err := bot.New(cfg, store, session)
+	if err != nil {
+		slog.Error("starting bot:", "err", err)
+		os.Exit(1)
+	}
+
+	defer rallyBot.Shutdown()
 
 	err = session.Open()
 	if err != nil {
-		slog.Error("opening connection", "err", err)
+		slog.Error("opening connection: %w", err)
 		os.Exit(1)
 	}
 
@@ -36,8 +47,6 @@ func main() {
 	waitForInterrupt()
 
 	slog.Info("Bot shutting down")
-
-	bot.CleanupCommands(botConfig, session)
 }
 
 func waitForInterrupt() {

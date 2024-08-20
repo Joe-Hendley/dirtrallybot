@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/event"
 )
 
 func TestApplyEvent(t *testing.T) {
 	challengeID := "123"
-	newStoreWithEvent := func(t *testing.T, e any) Store {
+	newStoreWithEvent := func(t *testing.T, e model.Event) Store {
 		t.Helper()
 		originalChallenge := &challenge.Model{}
 		store := Store{

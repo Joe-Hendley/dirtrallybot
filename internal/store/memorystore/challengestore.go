@@ -4,18 +4,22 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 )
 
-// TODO: remove the exported var, replace it with NewStore()
-var DefaultStore = Store{
-	lock:         &sync.Mutex{},
-	challengeMap: map[string]*challenge.Model{},
-}
+var _ model.Store = New()
 
 type Store struct {
 	lock         *sync.Mutex
 	challengeMap map[string]*challenge.Model
+}
+
+func New() *Store {
+	return &Store{
+		lock:         &sync.Mutex{},
+		challengeMap: map[string]*challenge.Model{},
+	}
 }
 
 // Get returns a shallow copy of the stored challenge if present.
@@ -37,7 +41,7 @@ func (s *Store) Put(id string, challenge *challenge.Model) {
 	s.challengeMap[id] = challenge
 }
 
-func (s *Store) ApplyEvent(id string, event any) error { // TODO EVENTTYPE
+func (s *Store) ApplyEvent(id string, event model.Event) error { // TODO EVENTTYPE
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

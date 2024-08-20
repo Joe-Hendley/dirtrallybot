@@ -3,6 +3,7 @@ package bot
 import (
 	"log"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -14,7 +15,7 @@ var (
 func registerCommands() {
 }
 
-func CreateCommands(config Config, session *discordgo.Session) {
+func CreateCommands(config config.Config, session *discordgo.Session) {
 	registerCommands()
 
 	cmdIDs = make(map[string]string, len(commands))
@@ -29,7 +30,7 @@ func CreateCommands(config Config, session *discordgo.Session) {
 	}
 }
 
-func CleanupCommands(config Config, session *discordgo.Session) {
+func CleanupCommands(config config.Config, session *discordgo.Session) {
 	for id, name := range cmdIDs {
 		err := session.ApplicationCommandDelete(config.App, "", id)
 		if err != nil {

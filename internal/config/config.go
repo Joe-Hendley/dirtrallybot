@@ -1,4 +1,4 @@
-package bot
+package config
 
 import (
 	"fmt"
@@ -8,15 +8,23 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type StoreType string
+
+const (
+	MEMORY StoreType = "memory"
+)
+
 const (
 	DEFAULTAPP   = "NOTSET"
 	DEFAULTGUILD = "NOTSET"
 	DEFAULTTOKEN = "NOTSET"
+	DEFAULTSTORE = MEMORY
 )
 
 var (
-	app   string = DEFAULTAPP
-	token string = DEFAULTTOKEN
+	app   string    = DEFAULTAPP
+	token string    = DEFAULTTOKEN
+	store StoreType = DEFAULTSTORE
 )
 
 func init() {
@@ -29,12 +37,14 @@ func init() {
 type Config struct {
 	App   string
 	Token string
+	Store StoreType
 }
 
-func NewConfig() Config {
+func New() Config {
 	return Config{
 		App:   app,
 		Token: token,
+		Store: store,
 	}
 }
 
