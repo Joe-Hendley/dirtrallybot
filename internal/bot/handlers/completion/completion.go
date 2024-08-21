@@ -1,8 +1,9 @@
-package challenge
+package completion
 
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const (
+	SubmitCompletionPrefix = "completed"
+)
+
 func HandleCompletionRequest(store model.Store, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionModalSubmit {
 		return
@@ -19,7 +24,7 @@ func HandleCompletionRequest(store model.Store, s *discordgo.Session, i *discord
 
 	data := i.ModalSubmitData()
 
-	if !strings.HasPrefix(data.CustomID, completionEventPrefix) {
+	if !strings.HasPrefix(data.CustomID, SubmitCompletionPrefix) {
 		return
 	}
 
@@ -82,5 +87,22 @@ func HandleCompletionRequest(store model.Store, s *discordgo.Session, i *discord
 
 	if err != nil {
 		log.Printf("error sending response to valid timestamp: %v\n", err)
+	}
+}
+
+func updateTopThree(store model.Store, s *discordgo.Session, guildID, channelID, messageID string) {
+	challengeID := messageID
+	challenge, ok := store.Get(challengeID)
+	if !ok {
+		slog.Warn("could not find challenge", "id", challengeID)
+		return
+	}
+
+	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(challenge.FancyString() + "\n" + challenge.TopThreeFancyString(s, guildID))
+
+	_, err := s.ChannelMessageEditComplex(edited)
+	if err != nil {
+		slog.Error("editing challenge id: %s : %v\n", challengeID, err)
+		return
 	}
 }

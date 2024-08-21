@@ -1,50 +1,51 @@
-package challenge
+package handlers
 
 import (
-	"log"
 	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/completion"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/bwmarrin/discordgo"
 )
 
-func HandleInteractionMessageComponent(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func InteractionMessageComponent(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionMessageComponent {
 		return
 	}
 
 	switch interaction.MessageComponentData().CustomID {
-	case completedID:
-		completion(session, interaction)
-	case timesID:
-		displayTimes(store, session, interaction)
-	case goodID:
-		good(session, interaction)
-	case badID:
-		bad(session, interaction)
+	case challenge.CompletedID:
+		handleCompletion(session, interaction)
+	case challenge.TimesID:
+		handleDisplayTimes(store, session, interaction)
+	case challenge.GoodID:
+		handleGood(session, interaction)
+	case challenge.BadID:
+		handleBad(session, interaction)
 	}
 }
 
-func HandleModalSubmit(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func ModalSubmit(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
 
 	data := interaction.ModalSubmitData()
 
-	if strings.HasPrefix(data.CustomID, completionEventPrefix) {
-		HandleCompletionRequest(store, session, interaction)
+	if strings.HasPrefix(data.CustomID, completion.SubmitCompletionPrefix) {
+		completion.HandleCompletionRequest(store, session, interaction)
 	}
 }
 
-func completion(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func handleCompletion(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
 		Data: &discordgo.InteractionResponseData{
-			CustomID: strings.Join([]string{completionEventPrefix, i.ChannelID, i.Message.ID, i.Interaction.Member.User.ID, strconv.FormatInt(time.Now().Unix(), 10)}, "_"),
+			CustomID: strings.Join([]string{completion.SubmitCompletionPrefix, i.ChannelID, i.Message.ID, i.Interaction.Member.User.ID, strconv.FormatInt(time.Now().Unix(), 10)}, "_"),
 			Title:    "Please input your time",
 			Content:  "Please input your time",
 			Components: []discordgo.MessageComponent{
@@ -66,28 +67,11 @@ func completion(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		slog.Error("responding to completion interaction", "err", err)
 	}
 }
 
-func updateTopThree(store model.Store, s *discordgo.Session, guildID, channelID, messageID string) {
-	challengeID := messageID
-	challenge, ok := store.Get(challengeID)
-	if !ok {
-		slog.Warn("could not find challenge", "id", challengeID)
-		return
-	}
-
-	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(challenge.FancyString() + "\n" + challenge.TopThreeFancyString(s, guildID))
-
-	_, err := s.ChannelMessageEditComplex(edited)
-	if err != nil {
-		log.Printf("error editing challenge id: %s : %v\n", challengeID, err)
-		return
-	}
-}
-
-func displayTimes(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func handleDisplayTimes(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	challengeID := interaction.Message.ID
 	challenge, ok := store.Get(challengeID)
 	if !ok {
@@ -108,7 +92,7 @@ func displayTimes(store model.Store, session *discordgo.Session, interaction *di
 	}
 }
 
-func good(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func handleGood(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -122,7 +106,7 @@ func good(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 }
 
-func bad(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func handleBad(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

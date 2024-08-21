@@ -8,7 +8,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 )
 
-var _ model.Store = New()
+var _ model.Store = &Store{}
 
 type Store struct {
 	lock         *sync.Mutex
@@ -22,7 +22,6 @@ func New() *Store {
 	}
 }
 
-// Get returns a shallow copy of the stored challenge if present.
 func (s *Store) Get(id string) (c challenge.Model, ok bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -41,7 +40,7 @@ func (s *Store) Put(id string, challenge *challenge.Model) {
 	s.challengeMap[id] = challenge
 }
 
-func (s *Store) ApplyEvent(id string, event model.Event) error { // TODO EVENTTYPE
+func (s *Store) ApplyEvent(id string, event model.Event) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

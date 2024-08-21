@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -30,7 +30,8 @@ var (
 func init() {
 	err := loadEnv()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("loading env file", "err", err)
+		os.Exit(1)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
@@ -70,8 +71,8 @@ func (bot *bot) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 func (bot *bot) HandleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
 	case discordgo.InteractionMessageComponent:
-		challenge.HandleInteractionMessageComponent(bot.store, s, i)
+		handlers.InteractionMessageComponent(bot.store, s, i)
 	case discordgo.InteractionModalSubmit:
-		challenge.HandleModalSubmit(bot.store, s, i)
+		handlers.ModalSubmit(bot.store, s, i)
 	}
 }

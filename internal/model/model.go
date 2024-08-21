@@ -9,7 +9,6 @@ import (
 type Event interface {
 	ID() string
 	Timestamp() time.Time
-	ChallengeID() string
 }
 
 type Store interface {
@@ -17,4 +16,22 @@ type Store interface {
 	Put(id string, challenge *challenge.Model)
 	ApplyEvent(id string, event Event) error
 	Delete(id string)
+}
+
+// TODO - split out store into Challenge & completion / Feedback interfaces
+
+type ChallengeStore interface {
+	GetChallenge(id string) (c challenge.Model, ok bool)
+	AddChallenge(id string, challenge *challenge.Model)
+	AddCompletion(id string, event Event) error
+	DeleteChallenge(id string)
+}
+
+// I'm thinking this should add feedback, get the net feedback, get all feedback, delete individual feedback
+// might be more suited to a relational db than bolt but that's a problem for later
+type FeedbackStore interface {
+	AddFeedback(feedback any)
+	GetNetFeedback() any
+	GetAllFeedback() []any
+	DeleteFeedback(id string) bool
 }

@@ -10,12 +10,10 @@ import (
 )
 
 const (
-	completedID           = "newstage_completed"
-	completionEventPrefix = "completed"
-
-	timesID = "newstage_time"
-	goodID  = "newstage_good"
-	badID   = "newstage_bad"
+	CompletedID = "newstage_completed"
+	TimesID     = "newstage_time"
+	GoodID      = "newstage_good"
+	BadID       = "newstage_bad"
 )
 
 var (
@@ -36,25 +34,25 @@ func HandleNewChallenge(store model.Store, s *discordgo.Session, m *discordgo.Me
 						Emoji:    &discordgo.ComponentEmoji{Name: "⏱️"},
 						Style:    discordgo.PrimaryButton,
 						Disabled: false,
-						CustomID: completedID,
+						CustomID: CompletedID,
 					},
 					discordgo.Button{
 						Emoji:    &discordgo.ComponentEmoji{Name: "📋"},
 						Style:    discordgo.SecondaryButton,
 						Disabled: false,
-						CustomID: timesID,
+						CustomID: TimesID,
 					},
 					discordgo.Button{
 						Emoji:    &discordgo.ComponentEmoji{Name: "👍"},
 						Style:    discordgo.SuccessButton,
 						Disabled: true,
-						CustomID: goodID,
+						CustomID: GoodID,
 					},
 					discordgo.Button{
 						Emoji:    &discordgo.ComponentEmoji{Name: "👎"},
 						Style:    discordgo.DangerButton,
 						Disabled: true,
-						CustomID: badID,
+						CustomID: BadID,
 					},
 				},
 			},

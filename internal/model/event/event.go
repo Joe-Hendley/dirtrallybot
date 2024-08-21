@@ -3,9 +3,8 @@ package event
 import "time"
 
 type baseEvent struct {
-	id          string
-	timestamp   time.Time
-	challengeID string // is this needed? probably for rehydration
+	id        string
+	timestamp time.Time
 }
 
 func New(id string, timestamp int64) baseEvent {
@@ -23,14 +22,11 @@ func (b baseEvent) Timestamp() time.Time {
 	return b.timestamp
 }
 
-func (b baseEvent) ChallengeID() string {
-	return b.challengeID
-}
-
 type Completion struct {
 	baseEvent
-	userID   string
-	duration time.Duration
+	userID      string
+	challengeID string
+	duration    time.Duration
 }
 
 // Completion holds the details of a user-reported challenge completion
@@ -48,4 +44,8 @@ func (c Completion) UserID() string {
 
 func (c Completion) Duration() time.Duration {
 	return c.duration
+}
+
+func (c Completion) ChallengeID() string {
+	return c.challengeID
 }
