@@ -12,6 +12,23 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+func ApplicationCommand(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if interaction.Type != discordgo.InteractionApplicationCommand {
+		return
+	}
+
+	switch interaction.ApplicationCommandData().Name {
+	case challenge.NewstageDR2DefaultID:
+		challenge.HandleCreateDR2ChallengeDefault(store, session, challenge.NewInvocationFromInteractionCreate(*interaction))
+	case challenge.NewstageDR2CustomID:
+		challenge.HandleCreateDR2ChallengeCustom(store, session, interaction)
+	case challenge.NewstageWRCDefaultID:
+		challenge.HandleCreateWRCChallengeDefault(session, interaction)
+	case challenge.NewstageWRCCustomID:
+		challenge.HandleCreateWRCChallengeCustom(session, interaction)
+	}
+}
+
 func InteractionMessageComponent(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionMessageComponent {
 		return

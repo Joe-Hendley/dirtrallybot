@@ -1,6 +1,8 @@
 package class
 
-import "github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+import (
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+)
 
 type Model int
 
@@ -81,4 +83,16 @@ func (m Model) Drivetrain() drivetrain.Model {
 		return drivetrain.RWD
 	}
 	return 0 // equal to FWD, but it shouldn't matter
+}
+
+func WithDrivetrain(dt drivetrain.Model) []Model {
+	switch dt {
+	case drivetrain.FWD:
+		return []Model{H1, H2FWD, R2, F2}
+	case drivetrain.AWD:
+		return []Model{GroupB4WD, GroupA, NR4, WRC, R5}
+	case drivetrain.RWD:
+		return []Model{H2RWD, H3, GroupBRWD, RGT}
+	}
+	return []Model{}
 }

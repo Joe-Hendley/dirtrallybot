@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/event"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
@@ -17,6 +19,9 @@ import (
 
 type Randomiser interface {
 	Car() car.Model
+	CarFromClass(class class.Model) car.Model
+	CarFromDrivetrain(drivetrain drivetrain.Model) car.Model
+
 	Loc() location.Model
 	Weather(loc location.Model) weather.Model
 	Stage(loc location.Model) stage.Model
@@ -35,14 +40,79 @@ type completion struct {
 	duration time.Duration
 }
 
-func New(r Randomiser) *Model {
-	loc := r.Loc()
+type Config struct {
+	Location *location.Model
+	Stage    *stage.Model
+	Weather  *weather.Model
 
-	return &Model{
-		Stage:   r.Stage(loc),
-		Weather: r.Weather(loc),
-		Car:     r.Car(),
+	Car        *car.Model
+	Class      *class.Model
+	Drivetrain *drivetrain.Model
+}
+
+func (c Config) String() string {
+	stringParts := []string{}
+	if c.Stage != nil {
+		stringParts = append(stringParts, "stage: "+c.Stage.String())
+	} else if c.Location != nil {
+		stringParts = append(stringParts, "loc: "+c.Location.String())
 	}
+
+	if c.Weather != nil {
+		stringParts = append(stringParts, "weather: "+c.Weather.String())
+	}
+
+	if c.Car != nil {
+		stringParts = append(stringParts, "car: "+c.Car.String())
+	} else if c.Class != nil {
+		stringParts = append(stringParts, "class: "+c.Class.String())
+	} else if c.Drivetrain != nil {
+		stringParts = append(stringParts, "drivetrain: "+c.Drivetrain.String())
+	}
+
+	return strings.Join(stringParts, ", ")
+}
+
+func New(c Config, r Randomiser) *Model {
+	var loc location.Model
+
+	challenge := &Model{}
+
+	if c.Location != nil {
+		loc = *c.Location
+	} else {
+		loc = r.Loc()
+	}
+
+	if c.Stage != nil {
+		challenge.Stage = *c.Stage
+	} else {
+		challenge.Stage = r.Stage(loc)
+	}
+
+	if c.Weather != nil {
+		challenge.Weather = *c.Weather
+	} else {
+		challenge.Weather = r.Weather(loc)
+	}
+
+	switch {
+	case c.Car != nil:
+		challenge.Car = *c.Car
+		return challenge
+
+	case c.Class != nil:
+		challenge.Car = r.CarFromClass(*c.Class)
+		return challenge
+
+	case c.Drivetrain != nil:
+		challenge.Car = r.CarFromDrivetrain(*c.Drivetrain)
+		return challenge
+	}
+
+	challenge.Car = r.Car()
+
+	return challenge
 }
 
 func (m *Model) Events() []any {

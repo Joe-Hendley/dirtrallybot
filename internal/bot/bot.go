@@ -44,35 +44,37 @@ func (bot *bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
 	slog.Info("Bot is ready")
 }
 
-func (bot *bot) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
+	if message.Author.ID == session.State.User.ID {
 		return
 	}
 
-	slog.Debug("message", "id", m.ID, "author_id", m.Author.ID, "author_name", m.Author.GlobalName)
+	slog.Debug("message", "id", message.ID, "author_id", message.Author.ID, "author_name", message.Author.GlobalName)
 
-	lowercase := strings.ToLower(m.Content)
+	lowercase := strings.ToLower(message.Content)
 
 	switch lowercase {
 	case "!cars":
-		debug.HandleCars(s, m)
+		debug.HandleCars(session, message)
 
 	case "!stages":
-		debug.HandleStages(s, m)
+		debug.HandleStages(session, message)
 
 	case "!newstage":
-		challenge.HandleNewChallenge(bot.store, s, m)
+		challenge.HandleCreateDR2ChallengeDefault(bot.store, session, challenge.NewInvocationFromMessageCreate(*message))
 
 	default:
-		slog.Debug("message ignored", "id", m.ID)
+		slog.Debug("message ignored", "id", message.ID)
 	}
 }
 
-func (bot *bot) HandleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	switch i.Type {
+func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	switch interaction.Type {
+	case discordgo.InteractionApplicationCommand:
+		handlers.ApplicationCommand(bot.store, session, interaction)
 	case discordgo.InteractionMessageComponent:
-		handlers.InteractionMessageComponent(bot.store, s, i)
+		handlers.InteractionMessageComponent(bot.store, session, interaction)
 	case discordgo.InteractionModalSubmit:
-		handlers.ModalSubmit(bot.store, s, i)
+		handlers.ModalSubmit(bot.store, session, interaction)
 	}
 }

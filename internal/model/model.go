@@ -24,7 +24,7 @@ type ChallengeStore interface {
 	GetChallenge(id string) (c challenge.Model, ok bool)
 	AddChallenge(id string, challenge *challenge.Model)
 	AddCompletion(id string, event Event) error
-	DeleteChallenge(id string)
+	DeleteChallenge(id string) bool
 }
 
 // I'm thinking this should add feedback, get the net feedback, get all feedback, delete individual feedback
