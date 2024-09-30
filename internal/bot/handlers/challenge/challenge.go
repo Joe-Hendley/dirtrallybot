@@ -19,6 +19,8 @@ const (
 	NewstageWRCDefaultID = "newstagewrc"
 	NewstageDR2CustomID  = "newstage-custom"
 	NewstageWRCCustomID  = "newstagewrc-custom"
+
+	SubmitDR2ChallengeModalPrefix = "newstage_modal"
 )
 
 func NewInvocationFromMessageCreate(m discordgo.MessageCreate) invocation {
@@ -74,7 +76,44 @@ func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Sessi
 	store.Put(challengeID, challenge)
 }
 
-func HandleCreateDR2ChallengeCustom(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "This is a test message!",
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.SelectMenu{
+							MenuType: discordgo.StringSelectMenu,
+							CustomID: "stage_select",
+							Options: []discordgo.SelectMenuOption{
+								{
+									Label:       "Foo",
+									Value:       "foo",
+									Description: "foo desc",
+								},
+								{
+									Label:       "Bar",
+									Value:       "bar",
+									Description: "bar desc",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		slog.Error("sending challenge modal", "id", interaction.ID, "err", err)
+	}
+}
+
+func HandleCreateDR2ChallengeCustomModal(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+
 	challengeConfig, err := buildChallengeConfig(session, interaction)
 
 	slog.Debug("generating new challenge")

@@ -21,7 +21,7 @@ func ApplicationCommand(store model.Store, session *discordgo.Session, interacti
 	case challenge.NewstageDR2DefaultID:
 		challenge.HandleCreateDR2ChallengeDefault(store, session, challenge.NewInvocationFromInteractionCreate(*interaction))
 	case challenge.NewstageDR2CustomID:
-		challenge.HandleCreateDR2ChallengeCustom(store, session, interaction)
+		challenge.HandleCreateDR2ChallengeCustom(session, interaction)
 	case challenge.NewstageWRCDefaultID:
 		challenge.HandleCreateWRCChallengeDefault(session, interaction)
 	case challenge.NewstageWRCCustomID:
@@ -43,6 +43,9 @@ func InteractionMessageComponent(store model.Store, session *discordgo.Session, 
 		handleGood(session, interaction)
 	case challenge.BadID:
 		handleBad(session, interaction)
+	case "stage_select":
+		handleStageSelect(session, interaction)
+
 	}
 }
 
@@ -135,4 +138,45 @@ func handleBad(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if err != nil {
 		slog.Error("bad", "err", err)
 	}
+}
+
+func handleStageSelect(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	gotValue := i.MessageComponentData().Values[0]
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Content: "You picked: " + gotValue,
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.SelectMenu{
+							MenuType: discordgo.StringSelectMenu,
+							CustomID: "stage_select",
+							Options: []discordgo.SelectMenuOption{
+								{
+									Label:       "Foo",
+									Value:       "foo",
+									Description: "foo desc",
+								},
+								{
+									Label:       "Bar",
+									Value:       "bar",
+									Description: "bar desc",
+								},
+							},
+							Placeholder: gotValue,
+							Disabled:    true,
+						},
+					},
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		slog.Error("bad", "err", err)
+	}
+
 }

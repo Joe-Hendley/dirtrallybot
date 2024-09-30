@@ -40,15 +40,15 @@ var (
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{
 					Name:  "🎲 Random",
-					Value: "random",
+					Value: challenge.RandomID,
 				},
 				{
-					Name:  "🌍 Specific Location",
-					Value: "location",
+					Name:  "🌍 Select Location",
+					Value: challenge.LocationID,
 				},
 				{
-					Name:  "🏞️ Specific Stage",
-					Value: "stage",
+					Name:  "🏞️ Select Stage",
+					Value: challenge.StageID,
 				},
 			},
 		},
@@ -60,15 +60,15 @@ var (
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{
 					Name:  "🎲 Random",
-					Value: "random",
+					Value: challenge.RandomID,
 				},
 				{
 					Name:  "☀️ Dry",
-					Value: "random",
+					Value: challenge.DryID,
 				},
 				{
 					Name:  "🌧️ Wet",
-					Value: "stage",
+					Value: challenge.WetID,
 				},
 			},
 		},
@@ -79,20 +79,20 @@ var (
 			Required:    true,
 			Choices: []*discordgo.ApplicationCommandOptionChoice{
 				{
-					Name:  "🎲 Fully Random",
-					Value: "random",
+					Name:  "🎲 Random",
+					Value: challenge.RandomID,
 				},
 				{
-					Name:  "⚙️ Specific Drivetrain",
-					Value: "drivetrain",
+					Name:  "⚙️ Select Drivetrain",
+					Value: challenge.DrivetrainID,
 				},
 				{
-					Name:  "📋 Specific Class",
-					Value: "class",
+					Name:  "📋 Select Class",
+					Value: challenge.ClassID,
 				},
 				{
-					Name:  "🏎️ Specific Car",
-					Value: "class",
+					Name:  "🏎️ Select Car",
+					Value: challenge.CarID,
 				},
 			},
 		},
