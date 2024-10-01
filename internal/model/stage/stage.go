@@ -6,11 +6,11 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 )
 
-type distance bool
+type distance int
 
 const (
-	Short distance = true
-	Long  distance = false
+	Short distance = iota
+	Long
 )
 
 type Model struct {
@@ -28,6 +28,10 @@ func New(name string, location location.Model, distance distance) Model {
 }
 
 func (m Model) String() string {
+	return m.name
+}
+
+func (m Model) LongString() string {
 	return m.location.String() + ": " + m.name
 }
 

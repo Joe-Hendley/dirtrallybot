@@ -18,7 +18,6 @@ var (
 		{
 			Name:        challenge.NewstageDR2CustomID,
 			Description: "Generate a new Dirt Rally 2 challenge with custom settings",
-			Options:     options,
 		},
 		{
 			Name:        challenge.NewstageWRCDefaultID,
@@ -44,11 +43,11 @@ var (
 				},
 				{
 					Name:  "🌍 Select Location",
-					Value: challenge.LocationID,
+					Value: challenge.LocationSelectID,
 				},
 				{
 					Name:  "🏞️ Select Stage",
-					Value: challenge.StageID,
+					Value: challenge.StageSelectID,
 				},
 			},
 		},
@@ -84,15 +83,15 @@ var (
 				},
 				{
 					Name:  "⚙️ Select Drivetrain",
-					Value: challenge.DrivetrainID,
+					Value: challenge.DrivetrainSelectID,
 				},
 				{
 					Name:  "📋 Select Class",
-					Value: challenge.ClassID,
+					Value: challenge.ClassSelectID,
 				},
 				{
 					Name:  "🏎️ Select Car",
-					Value: challenge.CarID,
+					Value: challenge.CarSelectID,
 				},
 			},
 		},

@@ -53,7 +53,7 @@ type Config struct {
 func (c Config) String() string {
 	stringParts := []string{}
 	if c.Stage != nil {
-		stringParts = append(stringParts, "stage: "+c.Stage.String())
+		stringParts = append(stringParts, "stage: "+c.Stage.LongString())
 	} else if c.Location != nil {
 		stringParts = append(stringParts, "loc: "+c.Location.String())
 	}

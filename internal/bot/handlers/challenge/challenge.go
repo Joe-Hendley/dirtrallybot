@@ -51,7 +51,7 @@ var (
 func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Session, invocation invocation) {
 	slog.Debug("generating new challenge")
 	challenge := challenge.New(challenge.Config{}, r)
-	slog.Info("new challenge generated", "stage", challenge.Stage.String(), "weather", challenge.Weather.String(), "car", challenge.Car.String())
+	slog.Info("new challenge generated", "stage", challenge.Stage.LongString(), "weather", challenge.Weather.String(), "car", challenge.Car.String())
 
 	if invocation.interaction != nil {
 		// HAVE to respond to an interaction
@@ -80,49 +80,47 @@ func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *dis
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "This is a test message!",
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Components: []discordgo.MessageComponent{
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						discordgo.SelectMenu{
-							MenuType: discordgo.StringSelectMenu,
-							CustomID: "stage_select",
-							Options: []discordgo.SelectMenuOption{
-								{
-									Label:       "Foo",
-									Value:       "foo",
-									Description: "foo desc",
-								},
-								{
-									Label:       "Bar",
-									Value:       "bar",
-									Description: "bar desc",
-								},
-							},
-						},
-					},
-				},
-			},
+			Content:    "DR2 Challenge Builder v0.0.1",
+			Flags:      discordgo.MessageFlagsEphemeral,
+			Components: buildChallengeMessageComponents(challenge.Config{}),
 		},
 	})
 
 	if err != nil {
-		slog.Error("sending challenge modal", "id", interaction.ID, "err", err)
+		slog.Error("Create Custom DR2 Challenge Initial Message", "err", err)
 	}
 }
 
-func HandleCreateDR2ChallengeCustomModal(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
-
-	challengeConfig, err := buildChallengeConfig(session, interaction)
-
-	slog.Debug("generating new challenge")
-	challenge := challenge.New(challengeConfig, r)
-	slog.Info("new challenge generated", "stage", challenge.Stage.String(), "weather", challenge.Weather.String(), "car", challenge.Car.String())
+func HandleUpdateCreateDR2ChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	config, err := buildConfigFromInteraction(interaction)
 
 	if err != nil {
-		slog.Error("Create Custom DR2 Challenge", "err", err)
+		slog.Error("Create Custom DR2 Challenge Config", "err", err)
 	}
+
+	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content:    "DR2 Challenge Builder v0.0.1",
+			Flags:      discordgo.MessageFlagsEphemeral,
+			Components: buildChallengeMessageComponents(config),
+		},
+	})
+
+	if err != nil {
+		slog.Error("Update Create Custom DR2 Challenge Message", "err", err)
+	}
+}
+
+func HandleSubmitCreateChallenge(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	config, err := buildConfigFromInteraction(interaction)
+
+	if err != nil {
+		slog.Error("Create Custom DR2 Challenge Config", "err", err)
+	}
+
+	challenge := challenge.New(config, r)
+	slog.Info("new challenge generated", "stage", challenge.Stage.LongString(), "weather", challenge.Weather.String(), "car", challenge.Car.String())
 
 	challengeID, err := sendChallengeMessage(*challenge, session, NewInvocationFromInteractionCreate(*interaction))
 	if err != nil {

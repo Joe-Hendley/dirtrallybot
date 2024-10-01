@@ -28,3 +28,16 @@ func (m Model) String() string {
 
 	return "invalid drivetrain"
 }
+
+func (m Model) Emoji() string {
+	switch m {
+	case FWD:
+		return "🚗"
+	case AWD:
+		return "🚙"
+	case RWD:
+		return "🏎️"
+	}
+
+	return "invalid drivetrain"
+}
