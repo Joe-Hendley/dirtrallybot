@@ -19,11 +19,11 @@ func List() []Model {
 func (m Model) String() string {
 	switch m {
 	case DRY:
-		return "dry"
+		return "Dry"
 	case WET:
-		return "wet"
+		return "Wet"
 	case SNOW:
-		return "snow"
+		return "Snow"
 	}
 	return "invalid weather"
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 )
 
-const emoji = "🏎️"
+const Emoji = "🏎️"
 
 type Model struct {
 	name  string
@@ -21,6 +21,10 @@ func New(name string, class class.Model) Model {
 }
 
 func (m Model) String() string {
+	return m.name
+}
+
+func (m Model) LongString() string {
 	return m.name + " (" + m.class.String() + ")"
 }
 
@@ -29,7 +33,7 @@ func (m Model) Class() class.Model {
 }
 
 func (m Model) FancyString() string {
-	return fmt.Sprintf("%s **%s » %s**", emoji, m.class.String(), m.name)
+	return fmt.Sprintf("%s **%s » %s**", Emoji, m.class.String(), m.name)
 }
 
 func WeightedMap() map[Model]int {

@@ -34,18 +34,19 @@ func InteractionMessageComponent(store model.Store, session *discordgo.Session, 
 		return
 	}
 
-	switch interaction.MessageComponentData().CustomID {
-	case challenge.CompletedID:
-		handleCompletion(session, interaction)
-	case challenge.TimesID:
-		handleDisplayTimes(store, session, interaction)
-	case challenge.GoodID:
-		handleGood(session, interaction)
-	case challenge.BadID:
-		handleBad(session, interaction)
-	case "stage_select":
-		handleStageSelect(session, interaction)
+	customID := interaction.MessageComponentData().CustomID
 
+	switch {
+	case customID == challenge.CompletedID:
+		handleCompletion(session, interaction)
+	case customID == challenge.TimesID:
+		handleDisplayTimes(store, session, interaction)
+	case customID == challenge.GoodID:
+		handleGood(session, interaction)
+	case customID == challenge.BadID:
+		handleBad(session, interaction)
+	case strings.HasPrefix(customID, challenge.DR2ChallengePrefix):
+		challenge.HandleCustomDR2ChallengeInteraction(store, session, interaction)
 	}
 }
 
@@ -138,45 +139,4 @@ func handleBad(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if err != nil {
 		slog.Error("bad", "err", err)
 	}
-}
-
-func handleStageSelect(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	gotValue := i.MessageComponentData().Values[0]
-
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseUpdateMessage,
-		Data: &discordgo.InteractionResponseData{
-			Content: "You picked: " + gotValue,
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Components: []discordgo.MessageComponent{
-				discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						discordgo.SelectMenu{
-							MenuType: discordgo.StringSelectMenu,
-							CustomID: "stage_select",
-							Options: []discordgo.SelectMenuOption{
-								{
-									Label:       "Foo",
-									Value:       "foo",
-									Description: "foo desc",
-								},
-								{
-									Label:       "Bar",
-									Value:       "bar",
-									Description: "bar desc",
-								},
-							},
-							Placeholder: gotValue,
-							Disabled:    true,
-						},
-					},
-				},
-			},
-		},
-	})
-
-	if err != nil {
-		slog.Error("bad", "err", err)
-	}
-
 }

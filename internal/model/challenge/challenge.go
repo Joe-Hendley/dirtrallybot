@@ -17,6 +17,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const (
+	RandomEmoji       = "🎲"
+	RandomString      = "Random"
+	RandomFancyString = RandomEmoji + RandomString
+)
+
 type Randomiser interface {
 	Car() car.Model
 	CarFromClass(class class.Model) car.Model
@@ -63,7 +69,7 @@ func (c Config) String() string {
 	}
 
 	if c.Car != nil {
-		stringParts = append(stringParts, "car: "+c.Car.String())
+		stringParts = append(stringParts, "car: "+c.Car.LongString())
 	} else if c.Class != nil {
 		stringParts = append(stringParts, "class: "+c.Class.String())
 	} else if c.Drivetrain != nil {
@@ -71,6 +77,63 @@ func (c Config) String() string {
 	}
 
 	return strings.Join(stringParts, ", ")
+}
+
+func (c Config) FancyStageString() string {
+
+	var (
+		locationString string
+		stageString    string
+		weatherString  string
+	)
+
+	if c.Stage != nil {
+		stageString = c.Stage.FancyString()
+	} else {
+		if c.Location == nil {
+			locationString = RandomFancyString
+		} else {
+			locationString = c.Location.Flag() + " " + c.Location.String()
+		}
+
+		stageString = RandomFancyString
+	}
+
+	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1
+
+	switch {
+	case c.Weather != nil:
+		weatherString = fmt.Sprintf("%s **%s**", c.Weather.Emoji(), c.Weather.String())
+	case c.Weather == nil && !locationHasOneWeatherType:
+		weatherString = RandomFancyString
+
+	case c.Weather == nil && locationHasOneWeatherType:
+		weatherString = fmt.Sprintf("%s *(probably %s though)*", RandomFancyString, c.Location.Weather()[0].String())
+	}
+	return fmt.Sprintf("Location: %s\nStage: %s\nWeather: %s", locationString, stageString, weatherString)
+}
+
+func (c Config) FancyCarString() string {
+	const randomString = RandomEmoji + " Random"
+	var (
+		drivetrainString = RandomFancyString
+		classString      = RandomFancyString
+		carString        = RandomFancyString
+	)
+
+	switch {
+	case c.Car != nil:
+		drivetrainString = c.Car.Class().Drivetrain().String()
+		classString = c.Car.Class().String()
+		carString = c.Car.String()
+	case c.Class != nil:
+		drivetrainString = c.Class.Drivetrain().String()
+		classString = c.Class.String()
+	case c.Drivetrain != nil:
+		drivetrainString = c.Drivetrain.String()
+	}
+
+	return fmt.Sprintf("Drivetrain: %s\nClass: %s\nCar: %s", drivetrainString, classString, carString)
 }
 
 func New(c Config, r Randomiser) *Model {

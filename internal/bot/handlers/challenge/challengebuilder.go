@@ -26,18 +26,26 @@ const (
 	DryID    = "dry"
 	WetID    = "wet"
 
-	LocationSelectID = "challenge-location"
-	StageSelectID    = "challenge-stage"
-	WeatherSelectID  = "challenge-weather"
+	DR2ChallengePrefix = "challenge-dr2-"
 
-	DrivetrainSelectID = "challenge-drivetrain"
-	ClassSelectID      = "challenge-class"
-	CarSelectID        = "challenge-car"
+	locationFieldID          = "location"
+	LocationSelectID         = DR2ChallengePrefix + locationFieldID
+	stageFieldID             = "stage"
+	StageSelectID            = DR2ChallengePrefix + stageFieldID
+	weatherFieldID           = "weather"
+	WeatherSelectID          = DR2ChallengePrefix + weatherFieldID
+	SubmitLocationAndStageID = DR2ChallengePrefix + "submit-1"
 
-	SubmitID = "challenge-submit"
+	drivetrainFieldID  = "drivetrain"
+	DrivetrainSelectID = DR2ChallengePrefix + drivetrainFieldID
+	classFieldID       = "class"
+	ClassSelectID      = DR2ChallengePrefix + classFieldID
+	carFieldID         = "car"
+	CarSelectID        = DR2ChallengePrefix + carFieldID
+	SubmitCarID        = DR2ChallengePrefix + "submit-2"
 )
 
-func buildChallengeMessageComponents(config challenge.Config) []discordgo.MessageComponent {
+func buildChallengeLocationMessageComponents(config challenge.Config) []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
@@ -54,6 +62,21 @@ func buildChallengeMessageComponents(config challenge.Config) []discordgo.Messag
 				buildWeatherMenu(config),
 			},
 		},
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Label:    "Submit Stage",
+					Style:    discordgo.PrimaryButton,
+					Disabled: false,
+					CustomID: SubmitLocationAndStageID,
+				},
+			},
+		},
+	}
+}
+
+func buildChallengeCarMessageComponents(config challenge.Config) []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				buildDriveTrainMenu(config),
@@ -75,14 +98,17 @@ func buildChallengeMessageComponents(config challenge.Config) []discordgo.Messag
 					Label:    "Submit",
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
+					CustomID: SubmitCarID,
 				},
 			},
 		},
 	}
 }
 
-var RandomOption = discordgo.SelectMenuOption{
-	Label: "Random", Value: RandomID, Emoji: &discordgo.ComponentEmoji{Name: "🎲"},
+func randomOption(category string) discordgo.SelectMenuOption {
+	return discordgo.SelectMenuOption{
+		Label: "Random " + category, Value: RandomID, Emoji: &discordgo.ComponentEmoji{Name: challenge.RandomEmoji},
+	}
 }
 
 func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
@@ -92,7 +118,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		RandomOption,
+		randomOption("Location"),
 	}
 
 	hasDefault := false
@@ -131,7 +157,7 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		RandomOption,
+		randomOption("Stage"),
 	}
 
 	hasDefault := false
@@ -139,10 +165,13 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	if config.Location != nil {
 		for _, stage := range stage.AtLocation(*config.Location) {
 			stageID := strings.ToLower(stage.String())
+			if stageID == selected {
+				hasDefault = true
+			}
+
 			options = append(options, discordgo.SelectMenuOption{
 				Label:       stage.String(),
 				Value:       stageID,
-				Emoji:       &discordgo.ComponentEmoji{},
 				Description: stage.LongString(),
 				Default:     stageID == selected,
 			})
@@ -174,7 +203,7 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 		dryID := strings.ToLower(weather.DRY.String())
 		wetID := strings.ToLower(weather.WET.String())
 		options = []discordgo.SelectMenuOption{
-			RandomOption,
+			randomOption("Weather"),
 			{
 				Label:   weather.DRY.String(),
 				Value:   dryID,
@@ -205,7 +234,7 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 
 	default:
 		options = []discordgo.SelectMenuOption{
-			RandomOption,
+			randomOption("Weather"),
 		}
 
 		hasDefault := false
@@ -245,7 +274,7 @@ func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		RandomOption,
+		randomOption("Drivetrain"),
 	}
 
 	hasDefault := false
@@ -283,14 +312,27 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		RandomOption,
+		randomOption("Class"),
 	}
 
 	hasDefault := false
 
 	if config.Drivetrain != nil {
 		for _, class := range class.WithDrivetrain(*config.Drivetrain) {
-			classID := strings.ToLower(config.Class.String())
+			classID := strings.ToLower(class.String())
+			if classID == selected {
+				hasDefault = true
+			}
+
+			options = append(options, discordgo.SelectMenuOption{
+				Label:   class.String(),
+				Value:   classID,
+				Default: classID == selected,
+			})
+		}
+	} else {
+		for _, class := range class.List() {
+			classID := strings.ToLower(class.String())
 			if classID == selected {
 				hasDefault = true
 			}
@@ -323,14 +365,14 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		RandomOption,
+		randomOption("Car"),
 	}
 
 	hasDefault := false
 
 	if config.Class != nil {
 		for _, car := range car.InClass(*config.Class) {
-			carID := strings.ToLower(config.Class.String())
+			carID := strings.ToLower(car.String())
 			if carID == selected {
 				hasDefault = true
 			}
@@ -356,46 +398,256 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 }
 
-func buildConfigFromInteraction(interaction *discordgo.InteractionCreate) (challenge.Config, error) {
+func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (challenge.Config, error) {
 	customID := interaction.MessageComponentData().CustomID
 	var newValue string
-	if customID != SubmitID {
+	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
 		newValue = interaction.MessageComponentData().Values[0]
 	}
 	config := challenge.Config{}
 
+	currentValues := map[string]string{}
+
 	// each component is contained in a separate action row
 	// should be some number of select menus then a button
 	for _, componentRow := range interaction.Message.Components {
-		actionsRow, ok := componentRow.(discordgo.ActionsRow)
+		actionsRow, ok := componentRow.(*discordgo.ActionsRow)
 		if !ok {
 			return challenge.Config{}, errors.New("expected action row")
 		}
 
 		switch component := actionsRow.Components[0].(type) {
-		case discordgo.Button:
+		case *discordgo.Button:
 			continue
-		case discordgo.SelectMenu:
-			currentValue := ""
+		case *discordgo.SelectMenu:
 			for _, option := range component.Options {
 				if option.Default {
-					currentValue = option.Value
+					currentValues[component.CustomID] = option.Value
 					break
 				}
 			}
-			config = applyValueToConfig(config, component.CustomID, currentValue)
 		default:
 			return challenge.Config{}, errors.New("unexpected component type")
 		}
 	}
 
-	if newValue != "" {
+	config = applyLocation(config, currentValues[LocationSelectID])
+	config = applyStage(config, currentValues[StageSelectID])
+	config = applyWeather(config, currentValues[WeatherSelectID])
 
+	switch customID {
+	case LocationSelectID:
+		config = applyLocation(config, newValue)
+	case StageSelectID:
+		config = applyStage(config, newValue)
+	case WeatherSelectID:
+		config = applyWeather(config, newValue)
 	}
 
 	return config, nil
 }
 
-func applyValueToConfig(config challenge.Config, fieldID, value string) challenge.Config {
+func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (challenge.Config, error) {
+	customID := interaction.MessageComponentData().CustomID
+	var newValue string
+	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
+		newValue = interaction.MessageComponentData().Values[0]
+	}
+	config := challenge.Config{}
+
+	currentValues := map[string]string{}
+
+	// each component is contained in a separate action row
+	// should be some number of select menus then a button
+	for _, componentRow := range interaction.Message.Components {
+		actionsRow, ok := componentRow.(*discordgo.ActionsRow)
+		if !ok {
+			return challenge.Config{}, errors.New("expected action row")
+		}
+
+		switch component := actionsRow.Components[0].(type) {
+		case *discordgo.Button:
+			continue
+		case *discordgo.SelectMenu:
+			for _, option := range component.Options {
+				if option.Default {
+					currentValues[component.CustomID] = option.Value
+					break
+				}
+			}
+		default:
+			return challenge.Config{}, errors.New("unexpected component type")
+		}
+	}
+
+	config = applyDrivetrain(config, currentValues[DrivetrainSelectID])
+	config = applyClass(config, currentValues[ClassSelectID])
+	config = applyCar(config, currentValues[CarSelectID])
+
+	switch customID {
+	case DrivetrainSelectID:
+		config = applyDrivetrain(config, newValue)
+	case ClassSelectID:
+		config = applyClass(config, newValue)
+	case CarSelectID:
+		config = applyCar(config, newValue)
+	}
+
+	return config, nil
+}
+
+func applyLocation(config challenge.Config, value string) challenge.Config {
+	if value == RandomID {
+		config.Stage = nil
+		config.Weather = nil
+		return config
+	}
+
+	for _, loc := range location.List() {
+		if value == strings.ToLower(loc.String()) {
+			config.Location = &loc
+			return config
+		}
+	}
+
+	config.Location = nil
+
 	return config
+}
+
+func applyStage(config challenge.Config, value string) challenge.Config {
+	if value == RandomID || config.Location == nil {
+		return config
+	}
+
+	for _, stage := range stage.AtLocation(*config.Location) {
+		if value == strings.ToLower(stage.String()) {
+			config.Stage = &stage
+			return config
+		}
+	}
+
+	config.Stage = nil
+
+	return config
+}
+
+func applyWeather(config challenge.Config, value string) challenge.Config {
+	if value == RandomID {
+		return config
+	}
+
+	var validWeathers []weather.Model
+	if config.Location != nil {
+		validWeathers = config.Location.Weather()
+	} else {
+		validWeathers = []weather.Model{weather.DRY, weather.WET}
+	}
+
+	if len(validWeathers) == 1 {
+		config.Weather = &validWeathers[0]
+		return config
+	}
+
+	for _, weather := range validWeathers {
+		if value == strings.ToLower(weather.String()) {
+			config.Weather = &weather
+			return config
+		}
+	}
+
+	config.Weather = nil
+
+	return config
+}
+
+func applyDrivetrain(config challenge.Config, value string) challenge.Config {
+	if value == RandomID {
+		config.Class = nil
+		return config
+	}
+
+	for _, drivetrain := range drivetrain.List() {
+		if value == strings.ToLower(drivetrain.String()) {
+			config.Drivetrain = &drivetrain
+			return config
+		}
+	}
+
+	config.Drivetrain = nil
+
+	return config
+}
+
+func applyClass(config challenge.Config, value string) challenge.Config {
+	if value == RandomID {
+		config.Car = nil
+		return config
+	}
+
+	for _, class := range class.List() {
+		if value == strings.ToLower(class.String()) {
+			config.Class = &class
+			drivetrain := class.Drivetrain()
+			config.Drivetrain = &drivetrain
+			return config
+		}
+	}
+
+	config.Class = nil
+
+	return config
+}
+
+func applyCar(config challenge.Config, value string) challenge.Config {
+	if value == RandomID || config.Class == nil {
+		return config
+	}
+
+	for _, car := range car.InClass(*config.Class) {
+		if value == strings.ToLower(car.String()) {
+			config.Car = &car
+			return config
+		}
+	}
+
+	config.Car = nil
+
+	return config
+}
+
+// don't do this, just use base36 encoding instead
+const fieldDelim = 0x1f
+
+func buildParsableConfigString(config challenge.Config) string {
+	stringParts := []string{}
+	if config.Location != nil {
+		stringParts = append(stringParts, locationFieldID+":"+strings.ToLower(config.Location.String()))
+	}
+
+	if config.Stage != nil {
+		stringParts = append(stringParts, stageFieldID+":"+strings.ToLower(config.Stage.String()))
+	}
+
+	if config.Weather != nil {
+		stringParts = append(stringParts, weatherFieldID+":"+strings.ToLower(config.Weather.String()))
+	}
+
+	if config.Car != nil {
+		stringParts = append(stringParts, carFieldID+":"+strings.ToLower(config.Car.String()))
+	}
+
+	if config.Class != nil {
+		stringParts = append(stringParts, classFieldID+":"+strings.ToLower(config.Class.String()))
+	}
+
+	if config.Drivetrain != nil {
+		stringParts = append(stringParts, drivetrainFieldID+":"+strings.ToLower(config.Drivetrain.String()))
+	}
+
+	return strings.Join(stringParts, ", ")
+}
+
+func parseConfigString(configString string) challenge.Config {
+
 }
