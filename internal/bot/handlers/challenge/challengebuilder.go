@@ -2,7 +2,6 @@ package challenge
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
@@ -13,7 +12,6 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 	"github.com/bwmarrin/discordgo"
-	"github.com/martinlindhe/base36"
 )
 
 // so, we get the interaction in with the following options:
@@ -29,6 +27,7 @@ const (
 	WetID    = "wet"
 
 	DR2ChallengePrefix = "challenge-dr2-"
+	baseMessage        = "DR2 Challenge Builder v0.0.1"
 
 	locationFieldID          = "location"
 	LocationSelectID         = DR2ChallengePrefix + locationFieldID
@@ -434,18 +433,6 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 		}
 	}
 
-	var messageValues = map[string]string{}
-	content := strings.Split(interaction.Message.Content, "`")
-	if len(content) > 1 {
-		messageValues = decodeConfigString(content[1])
-	}
-
-	for k, v := range messageValues {
-		if _, ok := componentValues[DR2ChallengePrefix+k]; !ok {
-			componentValues[DR2ChallengePrefix+k] = v
-		}
-	}
-
 	config = applyLocation(config, componentValues[LocationSelectID])
 	config = applyStage(config, componentValues[StageSelectID])
 	config = applyWeather(config, componentValues[WeatherSelectID])
@@ -495,15 +482,18 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 		}
 	}
 
-	var messageValues = map[string]string{}
-	content := strings.Split(interaction.Message.Content, "`")
-	if len(content) > 1 {
-		messageValues = decodeConfigString(content[1])
-	}
-
-	for k, v := range messageValues {
-		if _, ok := componentValues[DR2ChallengePrefix+k]; !ok {
-			componentValues[DR2ChallengePrefix+k] = v
+	lines := strings.Split(interaction.Message.Content, "\n")
+	for _, line := range lines {
+		emojiDelimited := strings.Split(line, challenge.EmojiDelimiter)
+		if len(emojiDelimited) > 1 {
+			switch {
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), locationFieldID):
+				componentValues[LocationSelectID] = strings.ToLower(emojiDelimited[1])
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), stageFieldID):
+				componentValues[StageSelectID] = strings.ToLower(emojiDelimited[1])
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), weatherFieldID):
+				componentValues[WeatherSelectID] = strings.ToLower(emojiDelimited[1])
+			}
 		}
 	}
 
@@ -644,73 +634,4 @@ func applyCar(config challenge.Config, value string) challenge.Config {
 	config.Car = nil
 
 	return config
-}
-
-var (
-	configDelim = ";"
-	kvDelim     = ":"
-)
-
-func encodeConfigString(config challenge.Config) string {
-	stringParts := []string{}
-	if config.Location != nil {
-		encodedKey := base36.EncodeBytes([]byte(locationFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Location.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	if config.Stage != nil {
-		encodedKey := base36.EncodeBytes([]byte(stageFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Stage.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	if config.Weather != nil {
-		encodedKey := base36.EncodeBytes([]byte(weatherFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Weather.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	if config.Car != nil {
-		encodedKey := base36.EncodeBytes([]byte(carFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Car.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	if config.Class != nil {
-		encodedKey := base36.EncodeBytes([]byte(classFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Class.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	if config.Drivetrain != nil {
-		encodedKey := base36.EncodeBytes([]byte(drivetrainFieldID))
-		encodedValue := base36.EncodeBytes([]byte(strings.ToLower(config.Drivetrain.String())))
-		stringParts = append(stringParts, encodedKey+kvDelim+encodedValue)
-	}
-
-	return strings.Join(stringParts, configDelim)
-}
-
-func decodeConfigString(configString string) map[string]string {
-	configMap := map[string]string{}
-
-	encodedParts := strings.Split(configString, configDelim)
-	for _, encodedPart := range encodedParts {
-		configKVPair := strings.Split(encodedPart, kvDelim)
-		configMap[string(base36.DecodeToBytes(configKVPair[0]))] = string(base36.DecodeToBytes(configKVPair[1]))
-	}
-
-	return configMap
-}
-
-func buildChallengeBuilderContent(config challenge.Config) string {
-	baseMessage := "DR2 Challenge Builder v0.0.1"
-	encodedConfig := encodeConfigString(config)
-
-	if len(encodedConfig) != 0 {
-		return fmt.Sprintf("`%s`\n%s", encodedConfig, baseMessage)
-	}
-
-	return baseMessage
 }

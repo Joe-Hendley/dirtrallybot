@@ -17,10 +17,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const (
+var EmojiDelimiter = string([]byte{0x1f})
+
+var (
 	RandomEmoji       = "🎲"
 	RandomString      = "Random"
-	RandomFancyString = RandomEmoji + " " + RandomString
+	RandomFancyString = RandomEmoji + " " + EmojiDelimiter + RandomString
 )
 
 type Randomiser interface {
@@ -88,17 +90,17 @@ func (c Config) FancyStageString() string {
 	)
 
 	if c.Stage != nil {
-		stageString = c.Stage.Distance().Emoji() + " " + c.Stage.String()
-		locationString = c.Stage.Location().String()
+		stageString = c.Stage.Distance().Emoji() + " " + EmojiDelimiter + c.Stage.String()
+		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
 	} else if c.Location != nil {
-		locationString = c.Location.Flag() + " " + c.Location.String()
+		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
 	}
 
 	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1
 
 	switch {
 	case c.Weather != nil:
-		weatherString = fmt.Sprintf("%s %s", c.Weather.Emoji(), c.Weather.String())
+		weatherString = fmt.Sprintf("%s %s%s", c.Weather.Emoji(), EmojiDelimiter, c.Weather.String())
 	case c.Weather == nil && !locationHasOneWeatherType:
 		weatherString = RandomFancyString
 
@@ -117,14 +119,14 @@ func (c Config) FancyCarString() string {
 
 	switch {
 	case c.Car != nil:
-		drivetrainString = c.Car.Class().Drivetrain().FancyString()
-		classString = c.Car.Class().String()
-		carString = c.Car.String()
+		drivetrainString = c.Car.Class().Drivetrain().Emoji() + " " + EmojiDelimiter + c.Car.Class().Drivetrain().String()
+		classString = EmojiDelimiter + c.Car.Class().String()
+		carString = EmojiDelimiter + c.Car.String()
 	case c.Class != nil:
-		drivetrainString = c.Class.Drivetrain().FancyString()
+		drivetrainString = c.Class.Drivetrain().Emoji() + " " + EmojiDelimiter + c.Class.Drivetrain().String()
 		classString = c.Class.String()
 	case c.Drivetrain != nil:
-		drivetrainString = c.Drivetrain.FancyString()
+		drivetrainString = c.Drivetrain.Emoji() + " " + EmojiDelimiter + c.Drivetrain.String()
 	}
 
 	return fmt.Sprintf("Drivetrain: %s\nClass: %s\nCar: %s", drivetrainString, classString, carString)
