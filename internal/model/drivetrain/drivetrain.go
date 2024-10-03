@@ -19,11 +19,11 @@ func List() []Model {
 func (m Model) String() string {
 	switch m {
 	case FWD:
-		return "front wheel drive"
+		return "Front Wheel Drive"
 	case AWD:
-		return "four wheel drive"
+		return "Four Wheel Drive"
 	case RWD:
-		return "rear wheel drive"
+		return "Rear Wheel Drive"
 	}
 
 	return "invalid drivetrain"
@@ -40,4 +40,8 @@ func (m Model) Emoji() string {
 	}
 
 	return "invalid drivetrain"
+}
+
+func (m Model) FancyString() string {
+	return m.Emoji() + " " + m.String()
 }

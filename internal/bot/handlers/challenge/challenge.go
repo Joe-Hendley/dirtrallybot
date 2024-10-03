@@ -78,7 +78,7 @@ func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *dis
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content:    "DR2 Challenge Builder v0.0.1",
+			Content:    buildChallengeBuilderContent(challenge.Config{}),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeLocationMessageComponents(challenge.Config{}),
 		},
@@ -110,7 +110,7 @@ func updateDR2LocationSelectMessage(session *discordgo.Session, interaction *dis
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content:    "DR2 Challenge Builder v0.0.1",
+			Content:    buildChallengeBuilderContent(config),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeLocationMessageComponents(config),
 		},
@@ -131,7 +131,7 @@ func updateDR2CarSelectMessage(session *discordgo.Session, interaction *discordg
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content:    "DR2 Challenge Builder v0.0.1\n" + config.FancyStageString(),
+			Content:    buildChallengeBuilderContent(config) + "\n" + config.FancyStageString(),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeCarMessageComponents(config),
 		},
@@ -152,7 +152,7 @@ func updateDR2SelectMessageAndCreateChallenge(store model.Store, session *discor
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content: "DR2 Challenge Builder v0.0.1\n" + config.FancyStageString() + "\n" + config.FancyCarString(),
+			Content: buildChallengeBuilderContent(config) + "\n" + config.FancyStageString() + "\n" + config.FancyCarString(),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})

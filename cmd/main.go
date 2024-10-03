@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -45,7 +46,7 @@ func main() {
 	defer session.Close()
 
 	waitForInterrupt()
-
+	fmt.Println()
 	slog.Info("Bot shutting down")
 }
 

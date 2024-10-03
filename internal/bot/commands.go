@@ -115,7 +115,25 @@ func CreateCommands(config config.Config, session *discordgo.Session) {
 	}
 }
 
-func CleanupCommands(config config.Config, session *discordgo.Session) {
+func CleanupGuildCommands(config config.Config, session *discordgo.Session) {
+	for _, guild := range session.State.Guilds {
+		guildID := guild.ID
+		registeredCommands, err := session.ApplicationCommands(session.State.User.ID, guildID)
+		if err != nil {
+			slog.Error("fetching registered slash commands", "err", err)
+			os.Exit(1)
+		}
+
+		for _, cmd := range registeredCommands {
+			err := session.ApplicationCommandDelete(session.State.User.ID, guildID, cmd.ID)
+			if err != nil {
+				slog.Error("deleting slash command", "cmd", cmd.Name, "err", err)
+			}
+		}
+	}
+}
+
+func CleanupGlobalCommands(config config.Config, session *discordgo.Session) {
 	registeredCommands, err := session.ApplicationCommands(session.State.User.ID, "")
 	if err != nil {
 		slog.Error("fetching registered slash commands", "err", err)
@@ -126,7 +144,6 @@ func CleanupCommands(config config.Config, session *discordgo.Session) {
 		err := session.ApplicationCommandDelete(session.State.User.ID, "", cmd.ID)
 		if err != nil {
 			slog.Error("deleting slash command", "cmd", cmd.Name, "err", err)
-			os.Exit(1)
 		}
 	}
 }

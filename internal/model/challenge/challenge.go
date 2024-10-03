@@ -20,7 +20,7 @@ import (
 const (
 	RandomEmoji       = "🎲"
 	RandomString      = "Random"
-	RandomFancyString = RandomEmoji + RandomString
+	RandomFancyString = RandomEmoji + " " + RandomString
 )
 
 type Randomiser interface {
@@ -73,7 +73,7 @@ func (c Config) String() string {
 	} else if c.Class != nil {
 		stringParts = append(stringParts, "class: "+c.Class.String())
 	} else if c.Drivetrain != nil {
-		stringParts = append(stringParts, "drivetrain: "+c.Drivetrain.String())
+		stringParts = append(stringParts, "drivetrain: "+c.Drivetrain.FancyString())
 	}
 
 	return strings.Join(stringParts, ", ")
@@ -82,28 +82,23 @@ func (c Config) String() string {
 func (c Config) FancyStageString() string {
 
 	var (
-		locationString string
-		stageString    string
-		weatherString  string
+		locationString = RandomFancyString
+		stageString    = RandomFancyString
+		weatherString  = RandomFancyString
 	)
 
 	if c.Stage != nil {
-		stageString = c.Stage.FancyString()
-	} else {
-		if c.Location == nil {
-			locationString = RandomFancyString
-		} else {
-			locationString = c.Location.Flag() + " " + c.Location.String()
-		}
-
-		stageString = RandomFancyString
+		stageString = c.Stage.Distance().Emoji() + " " + c.Stage.String()
+		locationString = c.Stage.Location().String()
+	} else if c.Location != nil {
+		locationString = c.Location.Flag() + " " + c.Location.String()
 	}
 
 	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1
 
 	switch {
 	case c.Weather != nil:
-		weatherString = fmt.Sprintf("%s **%s**", c.Weather.Emoji(), c.Weather.String())
+		weatherString = fmt.Sprintf("%s %s", c.Weather.Emoji(), c.Weather.String())
 	case c.Weather == nil && !locationHasOneWeatherType:
 		weatherString = RandomFancyString
 
@@ -114,7 +109,6 @@ func (c Config) FancyStageString() string {
 }
 
 func (c Config) FancyCarString() string {
-	const randomString = RandomEmoji + " Random"
 	var (
 		drivetrainString = RandomFancyString
 		classString      = RandomFancyString
@@ -123,14 +117,14 @@ func (c Config) FancyCarString() string {
 
 	switch {
 	case c.Car != nil:
-		drivetrainString = c.Car.Class().Drivetrain().String()
+		drivetrainString = c.Car.Class().Drivetrain().FancyString()
 		classString = c.Car.Class().String()
 		carString = c.Car.String()
 	case c.Class != nil:
-		drivetrainString = c.Class.Drivetrain().String()
+		drivetrainString = c.Class.Drivetrain().FancyString()
 		classString = c.Class.String()
 	case c.Drivetrain != nil:
-		drivetrainString = c.Drivetrain.String()
+		drivetrainString = c.Drivetrain.FancyString()
 	}
 
 	return fmt.Sprintf("Drivetrain: %s\nClass: %s\nCar: %s", drivetrainString, classString, carString)

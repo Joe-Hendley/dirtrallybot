@@ -13,6 +13,16 @@ const (
 	Long
 )
 
+func (d distance) Emoji() string {
+	switch d {
+	case Short:
+		return "4️⃣"
+	case Long:
+		return "8️⃣"
+	}
+	return "invalid distance"
+}
+
 type Model struct {
 	name     string
 	location location.Model
@@ -29,6 +39,10 @@ func New(name string, location location.Model, distance distance) Model {
 
 func (m Model) String() string {
 	return m.name
+}
+
+func (m Model) Distance() distance {
+	return m.distance
 }
 
 func (m Model) LongString() string {

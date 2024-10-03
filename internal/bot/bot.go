@@ -37,7 +37,8 @@ func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot
 }
 
 func (bot *bot) Shutdown() {
-	CleanupCommands(bot.cfg, bot.session)
+	CleanupGuildCommands(bot.cfg, bot.session)
+	CleanupGlobalCommands(bot.cfg, bot.session)
 }
 
 func (bot *bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
