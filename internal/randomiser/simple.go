@@ -48,9 +48,7 @@ func (s *Simple) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	class.F2.Drivetrain()
-
-	classes := class.List()
+	classes := class.WithDrivetrain(drivetrain)
 	class := classes[s.r.IntN(len(classes))]
 
 	cars := car.InClass(class)
