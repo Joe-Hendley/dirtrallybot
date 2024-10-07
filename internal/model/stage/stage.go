@@ -6,14 +6,14 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 )
 
-type distance int
+type Distance int
 
 const (
-	Short distance = iota
+	Short Distance = iota
 	Long
 )
 
-func (d distance) Emoji() string {
+func (d Distance) Emoji() string {
 	switch d {
 	case Short:
 		return "4️⃣"
@@ -26,10 +26,10 @@ func (d distance) Emoji() string {
 type Model struct {
 	name     string
 	location location.Model
-	distance distance
+	distance Distance
 }
 
-func New(name string, location location.Model, distance distance) Model {
+func New(name string, location location.Model, distance Distance) Model {
 	return Model{
 		name:     name,
 		location: location,
@@ -37,15 +37,15 @@ func New(name string, location location.Model, distance distance) Model {
 	}
 }
 
-func (m Model) String() string {
+func (m Model) Name() string {
 	return m.name
 }
 
-func (m Model) Distance() distance {
+func (m Model) Distance() Distance {
 	return m.distance
 }
 
-func (m Model) LongString() string {
+func (m Model) String() string {
 	return m.location.String() + ": " + m.name
 }
 

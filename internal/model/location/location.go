@@ -40,7 +40,7 @@ func List() []Model {
 	}
 }
 
-func (m Model) LongString() string {
+func (m Model) DetailedString() string {
 	switch m {
 	case ARG:
 		return "Catamarca Province, Argentina"

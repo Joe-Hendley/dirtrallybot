@@ -12,49 +12,57 @@ var _ model.Store = &Store{}
 
 type Store struct {
 	lock         *sync.Mutex
-	challengeMap map[string]*challenge.Model
+	challengeMap map[string]challenge.Model
 }
 
 func New() *Store {
 	return &Store{
 		lock:         &sync.Mutex{},
-		challengeMap: map[string]*challenge.Model{},
+		challengeMap: map[string]challenge.Model{},
 	}
 }
 
-func (s *Store) Get(id string) (c challenge.Model, ok bool) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	got, ok := s.challengeMap[id]
-	if !ok {
-		return challenge.Model{}, false
-	}
-	return *got, ok
-}
-
-func (s *Store) Put(id string, challenge *challenge.Model) {
+func (s *Store) PutChallenge(id string, challenge challenge.Model) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	s.challengeMap[id] = challenge
+
+	return nil
 }
 
-func (s *Store) ApplyEvent(id string, event model.Event) error {
+func (s *Store) GetChallenge(challengeID string) (c challenge.Model, err error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_, ok := s.challengeMap[id]
+	got, ok := s.challengeMap[challengeID]
 	if !ok {
-		return fmt.Errorf("challenge id %s not found", id)
+		return challenge.Model{}, fmt.Errorf("challenge %s not found", challengeID)
 	}
-
-	return s.challengeMap[id].ApplyEvent(event)
+	return got, nil
 }
 
-func (s *Store) Delete(id string) {
+func (s *Store) DeleteChallenge(id string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	delete(s.challengeMap, id)
+
+	return nil
+}
+
+func (s *Store) RegisterCompletion(challengeID string, completion challenge.Completion) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	challenge, ok := s.challengeMap[challengeID]
+	if !ok {
+		return fmt.Errorf("challenge %s not found", challengeID) //fmt.Errorf("challenge id %s not found", challengeID)
+	}
+
+	challenge.RegisterCompletion(completion)
+
+	s.challengeMap[challengeID] = challenge
+
+	return nil
 }

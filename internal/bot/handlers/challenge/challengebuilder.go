@@ -134,7 +134,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 			Label:       loc.String(),
 			Value:       locID,
 			Emoji:       &discordgo.ComponentEmoji{Name: loc.Flag()},
-			Description: loc.LongString(),
+			Description: loc.DetailedString(),
 			Default:     locID == selected,
 		})
 	}
@@ -154,7 +154,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	var selected string
 	if config.Stage != nil {
-		selected = strings.ToLower(config.Stage.String())
+		selected = strings.ToLower(config.Stage.Name())
 	}
 
 	options := []discordgo.SelectMenuOption{
@@ -165,16 +165,16 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 
 	if config.Location != nil {
 		for _, stage := range stage.AtLocation(*config.Location) {
-			stageID := strings.ToLower(stage.String())
+			stageID := strings.ToLower(stage.Name())
 			if stageID == selected {
 				hasDefault = true
 			}
 
 			options = append(options, discordgo.SelectMenuOption{
-				Label:       stage.String(),
+				Label:       stage.Name(),
 				Value:       stageID,
 				Emoji:       &discordgo.ComponentEmoji{Name: stage.Distance().Emoji()},
-				Description: stage.LongString(),
+				Description: stage.String(),
 				Default:     stageID == selected,
 			})
 		}
@@ -363,7 +363,7 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 	var selected string
 	if config.Car != nil {
-		selected = strings.ToLower(config.Car.String())
+		selected = strings.ToLower(config.Car.Name())
 	}
 
 	options := []discordgo.SelectMenuOption{
@@ -374,13 +374,13 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 
 	if config.Class != nil {
 		for _, car := range car.InClass(*config.Class) {
-			carID := strings.ToLower(car.String())
+			carID := strings.ToLower(car.Name())
 			if carID == selected {
 				hasDefault = true
 			}
 
 			options = append(options, discordgo.SelectMenuOption{
-				Label:   car.String(),
+				Label:   car.Name(),
 				Value:   carID,
 				Default: carID == selected,
 			})
@@ -541,7 +541,7 @@ func applyStage(config challenge.Config, value string) challenge.Config {
 	}
 
 	for _, stage := range stage.AtLocation(*config.Location) {
-		if value == strings.ToLower(stage.String()) {
+		if value == strings.ToLower(stage.Name()) {
 			config.Stage = &stage
 			return config
 		}
@@ -625,7 +625,7 @@ func applyCar(config challenge.Config, value string) challenge.Config {
 	}
 
 	for _, car := range car.InClass(*config.Class) {
-		if value == strings.ToLower(car.String()) {
+		if value == strings.ToLower(car.Name()) {
 			config.Car = &car
 			return config
 		}

@@ -12,13 +12,14 @@ type StoreType string
 
 const (
 	MEMORY StoreType = "memory"
+	BOLT   StoreType = "bolt"
 )
 
 const (
 	DEFAULTAPP   = "NOTSET"
 	DEFAULTGUILD = "NOTSET"
 	DEFAULTTOKEN = "NOTSET"
-	DEFAULTSTORE = MEMORY
+	DEFAULTSTORE = BOLT
 )
 
 var (

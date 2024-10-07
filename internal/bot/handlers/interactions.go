@@ -94,13 +94,13 @@ func handleCompletion(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func handleDisplayTimes(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	challengeID := interaction.Message.ID
-	challenge, ok := store.Get(challengeID)
-	if !ok {
-		slog.Warn("could not find challenge", "id", challengeID)
+	challenge, err := store.GetChallenge(challengeID)
+	if err != nil {
+		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
 		return
 	}
 
-	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: challenge.FancyListCompletions(session, interaction.GuildID),

@@ -10,7 +10,6 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model/event"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
@@ -36,106 +35,25 @@ type Randomiser interface {
 }
 
 type Model struct {
-	Stage       stage.Model
-	Weather     weather.Model
-	Car         car.Model
-	events      []any        // TODO EVENTTYPE
-	completions []completion // ordered by submission time, but timestamp is on the event so we could add it to the completion
+	stage       stage.Model
+	weather     weather.Model
+	car         car.Model
+	completions []Completion
 }
 
-type completion struct {
-	userID   string
-	duration time.Duration
+func NewChallenge(s stage.Model, w weather.Model, car car.Model, completions []Completion) Model {
+	return Model{
+		stage:       s,
+		weather:     w,
+		car:         car,
+		completions: completions,
+	}
 }
 
-type Config struct {
-	Location *location.Model
-	Stage    *stage.Model
-	Weather  *weather.Model
-
-	Car        *car.Model
-	Class      *class.Model
-	Drivetrain *drivetrain.Model
-}
-
-func (c Config) String() string {
-	stringParts := []string{}
-	if c.Stage != nil {
-		stringParts = append(stringParts, "stage: "+c.Stage.LongString())
-	} else if c.Location != nil {
-		stringParts = append(stringParts, "loc: "+c.Location.String())
-	}
-
-	if c.Weather != nil {
-		stringParts = append(stringParts, "weather: "+c.Weather.String())
-	}
-
-	if c.Car != nil {
-		stringParts = append(stringParts, "car: "+c.Car.LongString())
-	} else if c.Class != nil {
-		stringParts = append(stringParts, "class: "+c.Class.String())
-	} else if c.Drivetrain != nil {
-		stringParts = append(stringParts, "drivetrain: "+c.Drivetrain.FancyString())
-	}
-
-	return strings.Join(stringParts, ", ")
-}
-
-func (c Config) FancyStageString() string {
-
-	var (
-		locationString = RandomFancyString
-		stageString    = RandomFancyString
-		weatherString  = RandomFancyString
-	)
-
-	if c.Stage != nil {
-		stageString = c.Stage.Distance().Emoji() + " " + EmojiDelimiter + c.Stage.String()
-		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
-	} else if c.Location != nil {
-		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
-	}
-
-	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1
-
-	switch {
-	case c.Weather != nil:
-		weatherString = fmt.Sprintf("%s %s%s", c.Weather.Emoji(), EmojiDelimiter, c.Weather.String())
-	case c.Weather == nil && !locationHasOneWeatherType:
-		weatherString = RandomFancyString
-
-	case c.Weather == nil && locationHasOneWeatherType:
-		weatherString = fmt.Sprintf("%s *(probably %s though)*", RandomFancyString, c.Location.Weather()[0].String())
-	}
-	return fmt.Sprintf("Location: %s\nStage: %s\nWeather: %s", locationString, stageString, weatherString)
-}
-
-func (c Config) FancyCarString() string {
-	var (
-		drivetrainString = RandomFancyString
-		classString      = RandomFancyString
-		carString        = RandomFancyString
-	)
-
-	switch {
-	case c.Car != nil:
-		drivetrainString = c.Car.Class().Drivetrain().Emoji() + " " + EmojiDelimiter + c.Car.Class().Drivetrain().String()
-		classString = EmojiDelimiter + c.Car.Class().String()
-		carString = EmojiDelimiter + c.Car.String()
-	case c.Class != nil:
-		drivetrainString = c.Class.Drivetrain().Emoji() + " " + EmojiDelimiter + c.Class.Drivetrain().String()
-		classString = c.Class.String()
-	case c.Drivetrain != nil:
-		drivetrainString = c.Drivetrain.Emoji() + " " + EmojiDelimiter + c.Drivetrain.String()
-	}
-
-	return fmt.Sprintf("Drivetrain: %s\nClass: %s\nCar: %s", drivetrainString, classString, carString)
-}
-
-func New(c Config, r Randomiser) *Model {
+func NewRandomChallenge(c Config, r Randomiser) Model {
 	var loc location.Model
 
-	challenge := &Model{}
+	challenge := Model{}
 
 	if c.Location != nil {
 		loc = *c.Location
@@ -144,62 +62,65 @@ func New(c Config, r Randomiser) *Model {
 	}
 
 	if c.Stage != nil {
-		challenge.Stage = *c.Stage
+		challenge.stage = *c.Stage
 	} else {
-		challenge.Stage = r.Stage(loc)
+		challenge.stage = r.Stage(loc)
 	}
 
 	if c.Weather != nil {
-		challenge.Weather = *c.Weather
+		challenge.weather = *c.Weather
 	} else {
-		challenge.Weather = r.Weather(loc)
+		challenge.weather = r.Weather(loc)
 	}
 
 	switch {
 	case c.Car != nil:
-		challenge.Car = *c.Car
+		challenge.car = *c.Car
 		return challenge
 
 	case c.Class != nil:
-		challenge.Car = r.CarFromClass(*c.Class)
+		challenge.car = r.CarFromClass(*c.Class)
 		return challenge
 
 	case c.Drivetrain != nil:
-		challenge.Car = r.CarFromDrivetrain(*c.Drivetrain)
+		challenge.car = r.CarFromDrivetrain(*c.Drivetrain)
 		return challenge
 	}
 
-	challenge.Car = r.Car()
+	challenge.car = r.Car()
+
+	challenge.completions = []Completion{}
 
 	return challenge
 }
 
-func (m *Model) Events() []any {
-	return m.events
+func (m *Model) Stage() stage.Model {
+	return m.stage
 }
 
-func (m *Model) Completions() []completion {
+func (m *Model) Weather() weather.Model {
+	return m.weather
+}
+
+func (m *Model) Car() car.Model {
+	return m.car
+}
+
+func (m *Model) Completions() []Completion {
 	return m.completions
 }
 
 func (m *Model) FancyString() string {
 	return strings.Join([]string{
-		m.Stage.FancyString(),
-		location.WeatherStrings()[m.Stage.Location()][m.Weather],
-		m.Car.FancyString(),
+		m.stage.FancyString(),
+		location.WeatherStrings()[m.Stage().Location()][m.Weather()],
+		m.car.FancyString(),
 		""},
 		"\n")
 }
 
-func (m *Model) ApplyEvent(e any) error { // TODO EVENTTYPE
-	switch t := e.(type) {
-	case event.Completion:
-		m.events = append(m.events, e)
-		m.completions = append(m.completions, completion{userID: e.(event.Completion).UserID(), duration: e.(event.Completion).Duration()})
-		return nil
-	default:
-		return fmt.Errorf("type %s not a valid event", t)
-	}
+func (m *Model) RegisterCompletion(c Completion) {
+	m.completions = append(m.completions, c)
 }
 
 func (m *Model) TopThreeFancyString(s *discordgo.Session, guildID string) string {
@@ -211,7 +132,7 @@ func (m *Model) TopThreeFancyString(s *discordgo.Session, guildID string) string
 		return fmt.Sprintf("🥇 **%s**\t%s", formatDuration(m.completions[0].duration), getCurrentDisplayName(s, guildID, m.completions[0].userID))
 	}
 
-	sorted := make([]completion, len(m.completions))
+	sorted := make([]Completion, len(m.completions))
 	//lint:ignore S1001 copy doesn't work on unexported struct fields
 	for i := range m.completions { //nolint:gosimple // copy doesn't work on unexported struct fields
 		sorted[i] = m.completions[i]
@@ -221,7 +142,7 @@ func (m *Model) TopThreeFancyString(s *discordgo.Session, guildID string) string
 	// TODO - sort out this linter nonsense, probably refactor the above
 	// could sort a list of indices instead?
 
-	slices.SortFunc(sorted, func(a, b completion) int { return int(a.duration - b.duration) })
+	slices.SortFunc(sorted, func(a, b Completion) int { return int(a.duration - b.duration) })
 
 	if len(sorted) == 2 {
 		return strings.Join([]string{
@@ -303,4 +224,108 @@ func getCurrentDisplayName(s *discordgo.Session, guildID, userID string) string 
 	}
 
 	return u.DisplayName()
+}
+
+type Config struct {
+	Location *location.Model
+	Stage    *stage.Model
+	Weather  *weather.Model
+
+	Car        *car.Model
+	Class      *class.Model
+	Drivetrain *drivetrain.Model
+}
+
+func (c Config) String() string {
+	stringParts := []string{}
+	if c.Stage != nil {
+		stringParts = append(stringParts, "stage: "+c.Stage.String())
+	} else if c.Location != nil {
+		stringParts = append(stringParts, "loc: "+c.Location.String())
+	}
+
+	if c.Weather != nil {
+		stringParts = append(stringParts, "weather: "+c.Weather.String())
+	}
+
+	if c.Car != nil {
+		stringParts = append(stringParts, "car: "+c.Car.String())
+	} else if c.Class != nil {
+		stringParts = append(stringParts, "class: "+c.Class.String())
+	} else if c.Drivetrain != nil {
+		stringParts = append(stringParts, "drivetrain: "+c.Drivetrain.FancyString())
+	}
+
+	return strings.Join(stringParts, ", ")
+}
+
+func (c Config) FancyStageString() string {
+
+	var (
+		locationString = RandomFancyString
+		stageString    = RandomFancyString
+		weatherString  = RandomFancyString
+	)
+
+	if c.Stage != nil {
+		stageString = c.Stage.Distance().Emoji() + " " + EmojiDelimiter + c.Stage.Name()
+		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
+	} else if c.Location != nil {
+		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
+	}
+
+	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1
+
+	switch {
+	case c.Weather != nil:
+		weatherString = fmt.Sprintf("%s %s%s", c.Weather.Emoji(), EmojiDelimiter, c.Weather.String())
+	case c.Weather == nil && !locationHasOneWeatherType:
+		weatherString = RandomFancyString
+
+	case c.Weather == nil && locationHasOneWeatherType:
+		weatherString = fmt.Sprintf("%s *(probably %s though)*", RandomFancyString, c.Location.Weather()[0].String())
+	}
+	return fmt.Sprintf("Location: %s\nStage: %s\nWeather: %s", locationString, stageString, weatherString)
+}
+
+func (c Config) FancyCarString() string {
+	var (
+		drivetrainString = RandomFancyString
+		classString      = RandomFancyString
+		carString        = RandomFancyString
+	)
+
+	switch {
+	case c.Car != nil:
+		drivetrainString = c.Car.Class().Drivetrain().Emoji() + " " + EmojiDelimiter + c.Car.Class().Drivetrain().String()
+		classString = EmojiDelimiter + c.Car.Class().String()
+		carString = EmojiDelimiter + c.Car.Name()
+	case c.Class != nil:
+		drivetrainString = c.Class.Drivetrain().Emoji() + " " + EmojiDelimiter + c.Class.Drivetrain().String()
+		classString = c.Class.String()
+	case c.Drivetrain != nil:
+		drivetrainString = c.Drivetrain.Emoji() + " " + EmojiDelimiter + c.Drivetrain.String()
+	}
+
+	return fmt.Sprintf("Drivetrain: %s\nClass: %s\nCar: %s", drivetrainString, classString, carString)
+}
+
+type Completion struct {
+	userID   string
+	duration time.Duration
+}
+
+func NewCompletion(userID string, duration time.Duration) Completion {
+	return Completion{
+		userID:   userID,
+		duration: duration,
+	}
+}
+
+func (c Completion) UserID() string {
+	return c.userID
+}
+
+func (c Completion) Duration() time.Duration {
+	return c.duration
 }

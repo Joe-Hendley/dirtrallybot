@@ -20,11 +20,11 @@ func New(name string, class class.Model) Model {
 	}
 }
 
-func (m Model) String() string {
+func (m Model) Name() string {
 	return m.name
 }
 
-func (m Model) LongString() string {
+func (m Model) String() string {
 	return m.name + " (" + m.class.String() + ")"
 }
 

@@ -15,6 +15,7 @@ import (
 
 func main() {
 	cfg := config.New()
+	slog.Info("starting with config", "store", cfg.Store)
 	store, err := store.New(cfg)
 	if err != nil {
 		slog.Error("initialising store:", "err", err)

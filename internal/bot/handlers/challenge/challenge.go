@@ -48,8 +48,8 @@ var (
 
 func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Session, invocation invocation) {
 	slog.Debug("generating new challenge")
-	challenge := challenge.New(challenge.Config{}, r)
-	slog.Info("new challenge generated", "stage", challenge.Stage.LongString(), "weather", challenge.Weather.String(), "car", challenge.Car.LongString())
+	challenge := challenge.NewRandomChallenge(challenge.Config{}, r)
+	slog.Info("new challenge generated", "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
 
 	if invocation.interaction != nil {
 		// HAVE to respond to an interaction
@@ -66,12 +66,12 @@ func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Sessi
 		}
 	}
 
-	challengeID, err := sendChallengeMessage(session, invocation.channelID, *challenge)
+	challengeID, err := sendChallengeMessage(session, invocation.channelID, challenge)
 	if err != nil {
 		slog.Error("sending challenge message", "id", invocation.id, "channel_id", invocation.channelID, "err", err)
 	}
 
-	store.Put(challengeID, challenge)
+	store.PutChallenge(challengeID, challenge)
 }
 
 func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
@@ -161,15 +161,15 @@ func updateDR2SelectMessageAndCreateChallenge(store model.Store, session *discor
 		slog.Error("Update Create Custom DR2 Final Challenge Message", "err", err)
 	}
 
-	challenge := challenge.New(config, r)
-	slog.Info("new challenge generated", "stage", challenge.Stage.LongString(), "weather", challenge.Weather.String(), "car", challenge.Car.LongString())
+	challenge := challenge.NewRandomChallenge(config, r)
+	slog.Info("new challenge generated", "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
 
-	challengeID, err := sendChallengeMessage(session, interaction.ChannelID, *challenge)
+	challengeID, err := sendChallengeMessage(session, interaction.ChannelID, challenge)
 	if err != nil {
 		slog.Error("sending challenge message", "id", interaction.ID, "channel_id", interaction.ChannelID, "err", err)
 	}
 
-	store.Put(challengeID, challenge)
+	store.PutChallenge(challengeID, challenge)
 }
 
 func HandleCreateWRCChallengeDefault(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
