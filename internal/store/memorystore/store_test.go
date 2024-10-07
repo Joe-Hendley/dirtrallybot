@@ -14,12 +14,17 @@ func TestRegisterCompletion(t *testing.T) {
 	completion := challenge.NewCompletion("user", time.Second)
 
 	store := memorystore.New()
-	store.PutChallenge(challengeID, myChallenge)
+	err := store.PutChallenge(challengeID, myChallenge)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
 
-	store.RegisterCompletion(challengeID, completion)
+	err = store.RegisterCompletion(challengeID, completion)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
 
 	gotChallenge, err := store.GetChallenge(challengeID)
-
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}

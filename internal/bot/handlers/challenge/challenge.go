@@ -71,7 +71,10 @@ func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Sessi
 		slog.Error("sending challenge message", "id", invocation.id, "channel_id", invocation.channelID, "err", err)
 	}
 
-	store.PutChallenge(challengeID, challenge)
+	err = store.PutChallenge(challengeID, challenge)
+	if err != nil {
+		slog.Error("storing default dr2 challenge", "err", err)
+	}
 }
 
 func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
@@ -158,7 +161,7 @@ func updateDR2SelectMessageAndCreateChallenge(store model.Store, session *discor
 	})
 
 	if err != nil {
-		slog.Error("Update Create Custom DR2 Final Challenge Message", "err", err)
+		slog.Error("updating Create Custom DR2 Final Challenge Message", "err", err)
 	}
 
 	challenge := challenge.NewRandomChallenge(config, r)
@@ -169,7 +172,10 @@ func updateDR2SelectMessageAndCreateChallenge(store model.Store, session *discor
 		slog.Error("sending challenge message", "id", interaction.ID, "channel_id", interaction.ChannelID, "err", err)
 	}
 
-	store.PutChallenge(challengeID, challenge)
+	err = store.PutChallenge(challengeID, challenge)
+	if err != nil {
+		slog.Error("storing custom dr2 challenge", "err", err)
+	}
 }
 
 func HandleCreateWRCChallengeDefault(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
