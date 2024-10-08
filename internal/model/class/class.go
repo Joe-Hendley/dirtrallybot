@@ -2,11 +2,13 @@ package class
 
 import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 )
 
 type Model int
 
 const (
+	// DR2
 	H1 Model = iota
 	H2FWD
 	H2RWD
@@ -20,9 +22,38 @@ const (
 	WRC
 	R5
 	RGT
+
+	// WRC
+	WRC_WRC
+	WRC2
+	JuniorWRC
+	WRC2017to2021
+	WRC1997to2011
+	Rally2
+	Rally4
+	S2000
+	S1600
+	F2_WRC
+	GroupA_WRC
+	GroupB4WD_WRC
+	GroupBRWD_WRC
+	H3RWD_WRC
+	H2RWD_WRC
+	H2FWD_WRC
+	H1_WRC
 )
 
-func List() []Model {
+func List(g game.Model) []Model {
+	switch g {
+	case game.DR2:
+		return listDR2()
+	case game.WRC:
+		return listWRC()
+	}
+	return []Model{}
+}
+
+func listDR2() []Model {
 	return []Model{
 		H1,
 		H2FWD,
@@ -37,6 +68,28 @@ func List() []Model {
 		WRC,
 		R5,
 		RGT,
+	}
+}
+
+func listWRC() []Model {
+	return []Model{
+		WRC_WRC,
+		WRC2,
+		JuniorWRC,
+		WRC2017to2021,
+		WRC1997to2011,
+		Rally2,
+		Rally4,
+		S2000,
+		S1600,
+		F2_WRC,
+		GroupA_WRC,
+		GroupB4WD_WRC,
+		GroupBRWD_WRC,
+		H3RWD_WRC,
+		H2RWD_WRC,
+		H2FWD_WRC,
+		H1_WRC,
 	}
 }
 
@@ -75,17 +128,37 @@ func (m Model) String() string {
 
 func (m Model) Drivetrain() drivetrain.Model {
 	switch m {
+	// DR2
 	case H1, H2FWD, R2, F2:
 		return drivetrain.FWD
 	case GroupB4WD, GroupA, NR4, WRC, R5:
 		return drivetrain.AWD
 	case H2RWD, H3, GroupBRWD, RGT:
 		return drivetrain.RWD
+		// WRC
+	case WRC_WRC:
+		return drivetrain.AWDHYBRID
+	case H1_WRC, H2FWD_WRC, F2_WRC, S1600, Rally4:
+		return drivetrain.FWD
+	case GroupB4WD_WRC, GroupA_WRC, S2000, Rally2, WRC1997to2011, WRC2017to2021, WRC2, JuniorWRC:
+		return drivetrain.AWD
+	case H2RWD_WRC, H3RWD_WRC, GroupBRWD_WRC:
+		return drivetrain.RWD
 	}
 	return 0 // equal to FWD, but it shouldn't matter
 }
 
-func WithDrivetrain(dt drivetrain.Model) []Model {
+func WithDrivetrain(dt drivetrain.Model, g game.Model) []Model {
+	switch g {
+	case game.DR2:
+		return withDrivetrainDR2(dt)
+	case game.WRC:
+		return withDrivetrainWRC(dt)
+	}
+	return []Model{}
+}
+
+func withDrivetrainDR2(dt drivetrain.Model) []Model {
 	switch dt {
 	case drivetrain.FWD:
 		return []Model{H1, H2FWD, R2, F2}
@@ -93,6 +166,20 @@ func WithDrivetrain(dt drivetrain.Model) []Model {
 		return []Model{GroupB4WD, GroupA, NR4, WRC, R5}
 	case drivetrain.RWD:
 		return []Model{H2RWD, H3, GroupBRWD, RGT}
+	}
+	return []Model{}
+}
+
+func withDrivetrainWRC(dt drivetrain.Model) []Model {
+	switch dt {
+	case drivetrain.FWD:
+		return []Model{H1_WRC, H2FWD_WRC, F2_WRC, S1600, Rally4}
+	case drivetrain.AWD:
+		return []Model{GroupB4WD_WRC, GroupA_WRC, S2000, Rally2, WRC1997to2011, WRC2017to2021, WRC2, JuniorWRC}
+	case drivetrain.RWD:
+		return []Model{H2RWD_WRC, H3RWD_WRC, GroupBRWD_WRC}
+	case drivetrain.AWDHYBRID:
+		return []Model{WRC_WRC}
 	}
 	return []Model{}
 }

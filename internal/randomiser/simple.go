@@ -7,6 +7,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
@@ -14,13 +15,15 @@ import (
 
 type Simple struct {
 	r *rand.Rand
+	g game.Model
 
 	mu sync.Mutex
 }
 
-func NewSimple() *Simple {
+func NewSimple(g game.Model) *Simple {
 	return &Simple{
 		r:  rand.New(rand.NewPCG(0, 0)),
+		g:  g,
 		mu: sync.Mutex{},
 	}
 }
@@ -29,10 +32,10 @@ func (s *Simple) Car() car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	classes := class.List()
+	classes := class.List(s.g)
 	class := classes[s.r.IntN(len(classes))]
 
-	cars := car.InClass(class)
+	cars := car.InClass(class, s.g)
 	return cars[s.r.IntN(len(cars))]
 }
 
@@ -40,7 +43,7 @@ func (s *Simple) CarFromClass(class class.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cars := car.InClass(class)
+	cars := car.InClass(class, s.g)
 	return cars[s.r.IntN(len(cars))]
 }
 
@@ -48,10 +51,10 @@ func (s *Simple) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	classes := class.WithDrivetrain(drivetrain)
+	classes := class.WithDrivetrain(drivetrain, s.g)
 	class := classes[s.r.IntN(len(classes))]
 
-	cars := car.InClass(class)
+	cars := car.InClass(class, s.g)
 	return cars[s.r.IntN(len(cars))]
 }
 
@@ -59,7 +62,7 @@ func (s *Simple) Loc() location.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	locs := location.List()
+	locs := location.List(s.g)
 	return locs[s.r.IntN(len(locs))]
 }
 

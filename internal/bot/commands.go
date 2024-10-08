@@ -12,16 +12,8 @@ import (
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
-			Name:        challenge.NewstageDR2DefaultID,
-			Description: "Generate a new Dirt Rally 2 challenge with default settings",
-		},
-		{
 			Name:        challenge.NewstageDR2CustomID,
 			Description: "Generate a new Dirt Rally 2 challenge with custom settings",
-		},
-		{
-			Name:        challenge.NewstageWRCDefaultID,
-			Description: "Generate a new WRC challenge with default settings",
 		},
 		{
 			Name:        challenge.NewstageWRCCustomID,

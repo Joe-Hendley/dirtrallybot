@@ -10,6 +10,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
@@ -227,6 +228,8 @@ func getCurrentDisplayName(s *discordgo.Session, guildID, userID string) string 
 }
 
 type Config struct {
+	Game game.Model
+
 	Location *location.Model
 	Stage    *stage.Model
 	Weather  *weather.Model

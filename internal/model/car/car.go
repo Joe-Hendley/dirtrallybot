@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 )
 
 const Emoji = "🏎️"
@@ -36,19 +37,19 @@ func (m Model) FancyString() string {
 	return fmt.Sprintf("%s **%s » %s**", Emoji, m.class.String(), m.name)
 }
 
-func WeightedMap() map[Model]int {
-	cars := make(map[Model]int)
-	for _, class := range class.List() {
-		for _, car := range InClass(class) {
-			cars[car] = 0
-		}
+func InClass(c class.Model, g game.Model) []Model {
+	switch g {
+	case game.DR2:
+		return inClassDR2(c)
+	case game.WRC:
+		return inClassWRC(c)
 	}
-
-	return cars
+	return []Model{}
 }
 
-func InClass(c class.Model) []Model {
+func inClassDR2(c class.Model) []Model {
 	switch c {
+	// DR2
 	case class.H1:
 		return []Model{
 			New("Mini Cooper S", c),
@@ -133,5 +134,10 @@ func InClass(c class.Model) []Model {
 			New("Ford Mustang GT4", c),
 			New("BMW M2 Competition", c)}
 	}
+	return []Model{}
+}
+
+// TODO - this
+func inClassWRC(_ class.Model) []Model {
 	return []Model{}
 }

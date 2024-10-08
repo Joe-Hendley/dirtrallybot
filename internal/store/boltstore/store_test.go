@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore"
 )
@@ -43,7 +44,7 @@ func TestBoltStore(t *testing.T) {
 }
 
 func TestPutAndGet(t *testing.T) {
-	r := randomiser.NewSimple()
+	r := randomiser.NewSimple(game.DR2)
 	challengeIDs := []string{
 		"challenge1",
 		"challenge2",
@@ -81,7 +82,7 @@ func TestPutAndGet(t *testing.T) {
 func TestRegisterCompletion(t *testing.T) {
 	store := MustCreateStore(t)
 	challengeID := "123"
-	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewSimple())
+	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewSimple(game.DR2))
 
 	err := store.PutChallenge(challengeID, myChallenge)
 	if err != nil {

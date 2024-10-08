@@ -2,48 +2,53 @@ package challenge
 
 import (
 	"errors"
+	"log/slog"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 	"github.com/bwmarrin/discordgo"
 )
 
-// so, we get the interaction in with the following options:
-// location - fully random, specific location, specific stage
-// weather 	- fully random, specific weather
-// car		- fully random, specific drivetrain, specific class, specific car
-
-// we then need to populate the select options with the list of options for these
+// TODO:
+// rewrite the custom IDs & prefixes etc to be
+// challenge-{dr2/wrc}-whateverfield
+// and then pass it everywhere
 
 const (
 	RandomID = "random"
 	DryID    = "dry"
 	WetID    = "wet"
 
-	DR2ChallengePrefix = "challenge-dr2-"
-	baseMessage        = "DR2 Challenge Builder v0.0.1"
+	DR2Prefix          = "dr2-"
+	WRCPrefix          = "wrc-"
+	ChallengePrefix    = "challenge-"
+	DR2ChallengePrefix = "dr2-" + ChallengePrefix
+	WRCChallengePrefix = "dr2-" + ChallengePrefix
+
+	baseMessage = "%s Challenge Builder v0.0.1"
 
 	locationFieldID          = "location"
-	LocationSelectID         = DR2ChallengePrefix + locationFieldID
+	LocationSelectID         = ChallengePrefix + locationFieldID
 	stageFieldID             = "stage"
-	StageSelectID            = DR2ChallengePrefix + stageFieldID
+	StageSelectID            = ChallengePrefix + stageFieldID
 	weatherFieldID           = "weather"
-	WeatherSelectID          = DR2ChallengePrefix + weatherFieldID
-	SubmitLocationAndStageID = DR2ChallengePrefix + "submit-1"
+	WeatherSelectID          = ChallengePrefix + weatherFieldID
+	SubmitLocationAndStageID = ChallengePrefix + "submit-1"
 
 	drivetrainFieldID  = "drivetrain"
-	DrivetrainSelectID = DR2ChallengePrefix + drivetrainFieldID
+	DrivetrainSelectID = ChallengePrefix + drivetrainFieldID
 	classFieldID       = "class"
-	ClassSelectID      = DR2ChallengePrefix + classFieldID
+	ClassSelectID      = ChallengePrefix + classFieldID
 	carFieldID         = "car"
-	CarSelectID        = DR2ChallengePrefix + carFieldID
-	SubmitCarID        = DR2ChallengePrefix + "submit-2"
+	CarSelectID        = ChallengePrefix + carFieldID
+	SubmitCarID        = ChallengePrefix + "submit-2"
 )
 
 func buildChallengeLocationMessageComponents(config challenge.Config) []discordgo.MessageComponent {
@@ -124,7 +129,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 
 	hasDefault := false
 
-	for _, loc := range location.List() {
+	for _, loc := range location.List(config.Game) {
 		locID := strings.ToLower(loc.String())
 		if locID == selected {
 			hasDefault = true
@@ -281,7 +286,7 @@ func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
 
 	hasDefault := false
 
-	for _, drivetrain := range drivetrain.List() {
+	for _, drivetrain := range drivetrain.List(config.Game) {
 		drivetrainID := strings.ToLower(drivetrain.String())
 		if drivetrainID == selected {
 			hasDefault = true
@@ -320,7 +325,7 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 	hasDefault := false
 
 	if config.Drivetrain != nil {
-		for _, class := range class.WithDrivetrain(*config.Drivetrain) {
+		for _, class := range class.WithDrivetrain(*config.Drivetrain, config.Game) {
 			classID := strings.ToLower(class.String())
 			if classID == selected {
 				hasDefault = true
@@ -333,7 +338,7 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 			})
 		}
 	} else {
-		for _, class := range class.List() {
+		for _, class := range class.List(config.Game) {
 			classID := strings.ToLower(class.String())
 			if classID == selected {
 				hasDefault = true
@@ -373,7 +378,7 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 	hasDefault := false
 
 	if config.Class != nil {
-		for _, car := range car.InClass(*config.Class) {
+		for _, car := range car.InClass(*config.Class, config.Game) {
 			carID := strings.ToLower(car.Name())
 			if carID == selected {
 				hasDefault = true
@@ -406,7 +411,9 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
 		newValue = interaction.MessageComponentData().Values[0]
 	}
-	config := challenge.Config{}
+
+	game := identifyGameFromCustomID(customID)
+	config := challenge.Config{Game: game}
 
 	componentValues := map[string]string{}
 
@@ -516,6 +523,19 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 	return config, nil
 }
 
+func identifyGameFromCustomID(customID string) game.Model {
+	if strings.HasPrefix(customID, DR2ChallengePrefix) {
+		return game.DR2
+	}
+
+	if strings.HasPrefix(customID, WRCChallengePrefix) {
+		return game.WRC
+	}
+
+	slog.Error("bad customid", "customid", customID)
+
+}
+
 func applyLocation(config challenge.Config, value string) challenge.Config {
 	if value == RandomID {
 		config.Stage = nil
@@ -523,7 +543,7 @@ func applyLocation(config challenge.Config, value string) challenge.Config {
 		return config
 	}
 
-	for _, loc := range location.List() {
+	for _, loc := range location.List(config.Game) {
 		if value == strings.ToLower(loc.String()) {
 			config.Location = &loc
 			return config
@@ -587,7 +607,7 @@ func applyDrivetrain(config challenge.Config, value string) challenge.Config {
 		return config
 	}
 
-	for _, drivetrain := range drivetrain.List() {
+	for _, drivetrain := range drivetrain.List(config.Game) {
 		if value == strings.ToLower(drivetrain.String()) {
 			config.Drivetrain = &drivetrain
 			return config
@@ -605,7 +625,7 @@ func applyClass(config challenge.Config, value string) challenge.Config {
 		return config
 	}
 
-	for _, class := range class.List() {
+	for _, class := range class.List(config.Game) {
 		if value == strings.ToLower(class.String()) {
 			config.Class = &class
 			drivetrain := class.Drivetrain()
@@ -624,7 +644,7 @@ func applyCar(config challenge.Config, value string) challenge.Config {
 		return config
 	}
 
-	for _, car := range car.InClass(*config.Class) {
+	for _, car := range car.InClass(*config.Class, config.Game) {
 		if value == strings.ToLower(car.Name()) {
 			config.Car = &car
 			return config
