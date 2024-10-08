@@ -16,16 +16,17 @@ const (
 )
 
 const (
-	DEFAULTAPP   = "NOTSET"
-	DEFAULTGUILD = "NOTSET"
-	DEFAULTTOKEN = "NOTSET"
-	DEFAULTSTORE = BOLT
+	DEFAULTAPP        = "NOTSET"
+	DEFAULTTESTSERVER = "NOTSET"
+	DEFAULTTOKEN      = "NOTSET"
+	DEFAULTSTORE      = BOLT
 )
 
 var (
-	app   string    = DEFAULTAPP
-	token string    = DEFAULTTOKEN
-	store StoreType = DEFAULTSTORE
+	app        string    = DEFAULTAPP
+	token      string    = DEFAULTTOKEN
+	store      StoreType = DEFAULTSTORE
+	testServer string    = DEFAULTTESTSERVER
 )
 
 func init() {
@@ -37,16 +38,18 @@ func init() {
 }
 
 type Config struct {
-	App   string
-	Token string
-	Store StoreType
+	App          string
+	Token        string
+	Store        StoreType
+	TestServerID string
 }
 
 func New() Config {
 	return Config{
-		App:   app,
-		Token: token,
-		Store: store,
+		App:          app,
+		Token:        token,
+		Store:        store,
+		TestServerID: testServer,
 	}
 }
 
@@ -58,5 +61,6 @@ func loadEnv() error {
 
 	token = os.Getenv("token")
 	app = os.Getenv("app")
+	testServer = os.Getenv("testserver")
 	return nil
 }

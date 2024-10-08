@@ -56,12 +56,21 @@ func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discord
 
 	switch lowercase {
 	case "!cars":
+		if message.GuildID != bot.cfg.TestServerID {
+			return
+		}
 		debug.HandleCars(session, message)
 
 	case "!stages":
+		if message.GuildID != bot.cfg.TestServerID {
+			return
+		}
 		debug.HandleStages(session, message)
 
 	case "!newstage":
+		if message.GuildID != bot.cfg.TestServerID {
+			return
+		}
 		challenge.HandleCreateDR2ChallengeDefault(bot.store, session, challenge.NewInvocationFromMessageCreate(*message))
 
 	default:
