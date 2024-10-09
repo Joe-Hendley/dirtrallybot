@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
@@ -12,13 +13,23 @@ import (
 )
 
 const (
-	CompletedID = "newstage_completed"
-	TimesID     = "newstage_time"
-	GoodID      = "newstage_good"
-	BadID       = "newstage_bad"
+	CompletedID = "challenge-completion-add"
+	TimesID     = "challenge-completion-display"
+	GoodID      = "challenge-feedback-good"
+	BadID       = "challenge-feedback-bad"
 
-	NewstageDR2CustomID = "newstage-custom"
-	NewstageWRCCustomID = "newstagewrc-custom"
+	ResponseSuffix  = "response"
+	ChallengePrefix = "challenge-"
+
+	NewDR2ChallengeID             = "newstage"
+	InitialDR2ChallengeResponseID = DR2ChallengePrefix + ResponseSuffix
+	DR2Prefix                     = "dr2-"
+	DR2ChallengePrefix            = ChallengePrefix + DR2Prefix
+
+	NewWRCChallengeID             = "newstage-wrc"
+	InitialWRCChallengeResponseID = WRCChallengePrefix + ResponseSuffix
+	WRCPrefix                     = "wrc-"
+	WRCChallengePrefix            = ChallengePrefix + WRCPrefix
 )
 
 func NewInvocationFromMessageCreate(m discordgo.MessageCreate) invocation {
@@ -46,41 +57,11 @@ var (
 	DR2Randomiser = randomiser.NewSimple(game.DR2)
 )
 
-func HandleCreateDR2ChallengeDefault(store model.Store, session *discordgo.Session, invocation invocation) {
-	slog.Debug("generating new challenge")
-	challenge := challenge.NewRandomChallenge(challenge.Config{}, DR2Randomiser)
-	slog.Info("new challenge generated", "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
-
-	if invocation.interaction != nil {
-		// HAVE to respond to an interaction
-		err := session.InteractionRespond(invocation.interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Have fun! 🟠🔴🔴🔴🔴🔴",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-
-		if err != nil {
-			slog.Error("Responding to Default DR2 Challenge", "err", err)
-		}
-	}
-
-	challengeID, err := sendChallengeMessage(session, invocation.channelID, challenge)
-	if err != nil {
-		slog.Error("sending challenge message", "id", invocation.id, "channel_id", invocation.channelID, "err", err)
-	}
-
-	err = store.PutChallenge(challengeID, challenge)
-	if err != nil {
-		slog.Error("storing default dr2 challenge", "err", err)
-	}
-}
-
-func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func HandleNewDR2Challenge(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
+			CustomID:   InitialDR2ChallengeResponseID,
 			Content:    fmt.Sprintf(baseMessage, game.DR2.String()),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeLocationMessageComponents(challenge.Config{Game: game.DR2}),
@@ -92,10 +73,11 @@ func HandleCreateDR2ChallengeCustom(session *discordgo.Session, interaction *dis
 	}
 }
 
-func HandleCreateWRCChallengeCustom(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func HandleNewWRCChallenge(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
+			CustomID:   InitialWRCChallengeResponseID,
 			Content:    fmt.Sprintf(baseMessage, game.DR2.String()),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeLocationMessageComponents(challenge.Config{Game: game.WRC}),
@@ -107,7 +89,7 @@ func HandleCreateWRCChallengeCustom(session *discordgo.Session, interaction *dis
 	}
 }
 
-func HandleCustomChallengeInteraction(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func HandleChallengeBuilderInteraction(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	stripped := interaction.MessageComponentData().CustomID[4:]
 	switch stripped {
 	case LocationSelectID, StageSelectID, WeatherSelectID:
@@ -119,11 +101,13 @@ func HandleCustomChallengeInteraction(store model.Store, session *discordgo.Sess
 	}
 }
 
-func updateLocationSelectMessage(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func updateLocationSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	config, err := buildStageConfigFromInteraction(interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Location Config", "err", err)
+		updateMessageWithError(session, interaction)
+		return
 	}
 
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
@@ -140,11 +124,13 @@ func updateLocationSelectMessage(session *discordgo.Session, interaction *discor
 	}
 }
 
-func updateCarSelectMessage(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func updateCarSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	config, err := buildCarConfigFromInteraction(interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Car Config", "err", err)
+		updateMessageWithError(session, interaction)
+		return
 	}
 
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
@@ -161,11 +147,13 @@ func updateCarSelectMessage(session *discordgo.Session, interaction *discordgo.I
 	}
 }
 
-func updateSelectMessageAndCreateChallenge(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func updateSelectMessageAndCreateChallenge(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	config, err := buildCarConfigFromInteraction(interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Final Config", "err", err)
+		updateMessageWithError(session, interaction)
+		return
 	}
 
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
@@ -194,7 +182,21 @@ func updateSelectMessageAndCreateChallenge(store model.Store, session *discordgo
 	}
 }
 
-func sendChallengeMessage(session *discordgo.Session, channelID string, challenge challenge.Model) (string, error) {
+func updateMessageWithError(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf("☹️ an error occured, please contact an administrator"),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
+
+	if err != nil {
+		slog.Error("update interaction message with error", "err", err)
+	}
+}
+
+func sendChallengeMessage(session discord.ChannelMessageSender, channelID string, challenge challenge.Model) (string, error) {
 	msg := &discordgo.MessageSend{
 		Content:    challenge.FancyString() + "\n",
 		Components: getChallengeButtons(),

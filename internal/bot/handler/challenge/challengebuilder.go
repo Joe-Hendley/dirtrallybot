@@ -2,6 +2,7 @@ package challenge
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -17,20 +18,12 @@ import (
 )
 
 // TODO:
-// rewrite the custom IDs & prefixes etc to be
-// challenge-{dr2/wrc}-whateverfield
-// and then pass it everywhere
+// rewrite the entire custom ID system
 
 const (
 	RandomID = "random"
 	DryID    = "dry"
 	WetID    = "wet"
-
-	DR2Prefix          = "dr2-"
-	WRCPrefix          = "wrc-"
-	ChallengePrefix    = "challenge-"
-	DR2ChallengePrefix = "dr2-" + ChallengePrefix
-	WRCChallengePrefix = "dr2-" + ChallengePrefix
 
 	baseMessage = "%s Challenge Builder v0.0.1"
 
@@ -412,8 +405,12 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 		newValue = interaction.MessageComponentData().Values[0]
 	}
 
-	game := identifyGameFromCustomID(customID)
-	config := challenge.Config{Game: game}
+	whichGame := identifyGameFromCustomID(customID)
+	if whichGame == game.NotSet {
+		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", customID)
+	}
+
+	config := challenge.Config{Game: whichGame}
 
 	componentValues := map[string]string{}
 
@@ -462,7 +459,13 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
 		newValue = interaction.MessageComponentData().Values[0]
 	}
-	config := challenge.Config{}
+
+	whichGame := identifyGameFromCustomID(customID)
+	if whichGame == game.NotSet {
+		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", customID)
+	}
+
+	config := challenge.Config{Game: whichGame}
 
 	componentValues := map[string]string{}
 
@@ -533,7 +536,7 @@ func identifyGameFromCustomID(customID string) game.Model {
 	}
 
 	slog.Error("bad customid", "customid", customID)
-
+	return game.NotSet
 }
 
 func applyLocation(config challenge.Config, value string) challenge.Config {

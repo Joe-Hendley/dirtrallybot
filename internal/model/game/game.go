@@ -3,7 +3,8 @@ package game
 type Model int
 
 const (
-	DR2 Model = iota
+	NotSet Model = iota
+	DR2
 	WRC
 )
 
@@ -14,4 +15,5 @@ func (m Model) String() string {
 	case WRC:
 		return "WRC"
 	}
+	return "invalid game"
 }

@@ -129,7 +129,7 @@ func (m Model) String() string {
 	case MCO_WRC:
 		return "Monte Carlo"
 	case SWE_WRC:
-		return "Sweden (WRC)"
+		return "Sweden"
 	case MEX:
 		return "Mexico"
 	case HRV:
@@ -143,9 +143,9 @@ func (m Model) String() string {
 	case EST:
 		return "Estonia"
 	case FIN_WRC:
-		return "Finland (WRC)"
+		return "Finland"
 	case GRC_WRC:
-		return "Greece (WRC)"
+		return "Greece"
 	case CHL:
 		return "Chile"
 	case CER:

@@ -138,6 +138,140 @@ func inClassDR2(c class.Model) []Model {
 }
 
 // TODO - this
-func inClassWRC(_ class.Model) []Model {
+func inClassWRC(c class.Model) []Model {
+	switch c {
+	case class.WRC_WRC:
+		return []Model{
+			New("Ford Puma Rally1 HYBRID", c),
+			New("Hyundai i20 N Rally1 HYBRID", c),
+			New("Toyota GR Yaris Rally1 HYBRID", c),
+		}
+	case class.WRC2:
+		return []Model{
+			New("Citroën C3 Rally2", c),
+			New("Ford Fiesta Rally2", c),
+			New("Hyundai i20 N Rally2", c),
+			New("Škoda Fabia Rally2 Evo", c),
+			New("Škoda Fabia RS Rally2", c),
+			New("Volkswagen Polo GTI R5", c),
+		}
+	case class.JuniorWRC:
+		return []Model{
+			New("Ford Fiesta Rally3", c),
+		}
+	case class.WRC2017to2021:
+		return []Model{
+			New("Ford Fiesta WRC", c),
+			New("Volkswagen Polo 2017", c),
+		}
+	case class.WRC1997to2011:
+		return []Model{
+			New("Citroën C4 WRC", c),
+			New("Citroën Xsara WRC", c),
+			New("Ford Focus RS Rally 2001", c),
+			New("Ford Focus RS Rally 2008", c),
+			New("MINI Countryman Rally Edition", c),
+			New("Mitsubishi Lancer Evolution VI", c),
+			New("Peugeot 206 Rally", c),
+			New("Seat C\u00f3rdoba WRC", c),
+			New("Škoda Fabia WRC", c),
+			New("SUBARU Impreza 1998", c),
+			New("SUBARU Impreza 2001", c),
+			New("SUBARU Impreza 2008", c),
+		}
+	case class.Rally2:
+		return []Model{
+			New("Ford Fiesta R5 MK7 Evo 2", c),
+			New("Peugeot 208 T16 R5", c),
+		}
+	case class.Rally4:
+		return []Model{
+			New("Ford Fiesta MK8 Rally4", c),
+			New("Opel Adam R2", c),
+			New("Peugeot 208 Rally4", c),
+			New("Renault Twingo II", c),
+		}
+	case class.NR4_WRC:
+		return []Model{
+			New("McRae R4", c),
+			New("Mitsubishi Lancer Evolution X", c),
+			New("SUBARU WRX STI NR4", c),
+		}
+	case class.S2000:
+		return []Model{
+			New("Fiat Grande Punto Abarth S2000", c),
+			New("Opel Corsa S2000", c),
+			New("Peugeot 207 S2000", c),
+		}
+	case class.S1600:
+		return []Model{
+			New("Citroën C2 Super 1600", c),
+			New("Citroën Saxo Super 1600", c),
+			New("Ford Puma S1600", c),
+			New("Renault Clio S1600", c),
+		}
+	case class.F2_WRC:
+		return []Model{
+			New("Ford Escort Mk 6 Maxi", c),
+			New("Peugeot 306 Maxi", c),
+			New("Renault Maxi Mégane", c),
+			New("Seat Ibiza Kit Car", c),
+			New("Vauxhall Astra Rally Car", c),
+			New("Volkswagen Golf IV Kit Car", c),
+		}
+	case class.GroupA_WRC:
+		return []Model{
+			New("Ford Escort RS Cosworth", c),
+			New("Lancia Delta HF Integrale", c),
+			New("Mitsubishi Galant VR4", c),
+			New("SUBARU Impreza 1995", c),
+			New("SUBARU Legacy RS", c),
+		}
+	case class.GroupB4WD_WRC:
+		return []Model{
+			New("Audi Sport quattro S1 (E2)", c),
+			New("Ford RS200", c),
+			New("Lancia Delta S4", c),
+			New("MG Metro 6R4", c),
+			New("Peugeot 205 T16 Evo 2", c),
+		}
+	case class.GroupBRWD_WRC:
+		return []Model{
+			New("BMW M1 Procar Rally", c),
+			New("Lancia 037 Evo 2", c),
+			New("Opel Manta 400", c),
+			New("Porsche 911 SC RS", c),
+		}
+	case class.H3RWD_WRC:
+		return []Model{
+			New("BMW M3 Evo Rally", c),
+			New("Ford Escort MK2 McRae Motorsport", c),
+			New("Ford Sierra Cosworth RS500", c),
+			New("Lancia Stratos", c),
+			New("Opel Ascona 400", c),
+			New("Renault 5 Turbo", c),
+		}
+	case class.H2RWD_WRC:
+		return []Model{
+			New("Alpine Renault A110 1600 S", c),
+			New("Fiat 131 Abarth Rally", c),
+			New("Ford Escort MK2", c),
+			New("Hillman Avenger", c),
+			New("Opel Kadett C GT/E", c),
+			New("Talbot Sunbeam Lotus", c),
+		}
+	case class.H2FWD_WRC:
+		return []Model{
+			New("Peugeot 205 GTI", c),
+			New("Peugeot 309 GTI", c),
+			New("Volkswagen Golf GTI", c),
+		}
+	case class.H1_WRC:
+		return []Model{
+			New("Lancia Fulvia HF", c),
+			New("MINI Cooper S", c),
+			New("Vauxhall Nova Sport", c),
+		}
+	}
 	return []Model{}
 }

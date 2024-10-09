@@ -4,9 +4,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers"
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/challenge"
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/debug"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/bwmarrin/discordgo"
@@ -67,12 +66,6 @@ func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discord
 		}
 		debug.HandleStages(session, message)
 
-	case "!newstage":
-		if message.GuildID != bot.cfg.TestServerID {
-			return
-		}
-		challenge.HandleCreateDR2ChallengeDefault(bot.store, session, challenge.NewInvocationFromMessageCreate(*message))
-
 	default:
 		slog.Debug("message ignored", "id", message.ID)
 	}
@@ -81,10 +74,10 @@ func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discord
 func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	switch interaction.Type {
 	case discordgo.InteractionApplicationCommand:
-		handlers.ApplicationCommand(bot.store, session, interaction)
+		handler.ApplicationCommand(session, interaction)
 	case discordgo.InteractionMessageComponent:
-		handlers.InteractionMessageComponent(bot.store, session, interaction)
+		handler.InteractionMessageComponent(bot.store, session, interaction)
 	case discordgo.InteractionModalSubmit:
-		handlers.ModalSubmit(bot.store, session, interaction)
+		handler.ModalSubmit(bot.store, session, interaction)
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handlers/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/bwmarrin/discordgo"
 )
@@ -12,11 +12,11 @@ import (
 var (
 	commands = []*discordgo.ApplicationCommand{
 		{
-			Name:        challenge.NewstageDR2CustomID,
+			Name:        challenge.NewDR2ChallengeID,
 			Description: "Generate a new Dirt Rally 2 challenge with custom settings",
 		},
 		{
-			Name:        challenge.NewstageWRCCustomID,
+			Name:        challenge.NewWRCChallengeID,
 			Description: "Generate a new WRC challenge with custom settings",
 		},
 	}

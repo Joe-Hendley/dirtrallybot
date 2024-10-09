@@ -1,4 +1,4 @@
-package parse
+package timestamp
 
 import (
 	"fmt"
@@ -7,8 +7,11 @@ import (
 	"time"
 )
 
-// TODO - better error messages
-func Timestamp(s string) (time.Duration, error) {
+func buildTimestamp(minutes, seconds, milliseconds int) time.Duration {
+	return time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second + time.Duration(milliseconds)*time.Millisecond
+}
+
+func Parse(s string) (time.Duration, error) {
 	minuteString, remainder, ok := strings.Cut(s, ":")
 	if !ok {
 		return 0, fmt.Errorf("invalid timestamp %s", s)
@@ -47,8 +50,19 @@ func Timestamp(s string) (time.Duration, error) {
 		return 0, fmt.Errorf("invalid timestamp %s", s)
 	}
 
-	return ((time.Duration(minutes) * time.Minute) +
-			(time.Duration(seconds) * time.Second) +
-			(time.Duration(milliseconds) * time.Millisecond)),
-		nil
+	return buildTimestamp(minutes, seconds, milliseconds), nil
+}
+
+func Format(duration time.Duration) string {
+	var (
+		minutes      = duration.Truncate(time.Minute)
+		seconds      = (duration - minutes).Truncate(time.Second)
+		milliseconds = (duration - minutes - seconds).Truncate(time.Millisecond)
+	)
+
+	minuteComponent := fmt.Sprintf("%2.f", minutes.Minutes())
+	secondComponent := fmt.Sprintf("%02.f", seconds.Seconds())
+	millisecondComponent := fmt.Sprintf("%d", milliseconds.Milliseconds())
+
+	return minuteComponent + ":" + secondComponent + "." + millisecondComponent
 }
