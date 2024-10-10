@@ -213,7 +213,7 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		randomOption("Random"),
+		randomOption("Stage"),
 	}
 
 	hasDefault := false
