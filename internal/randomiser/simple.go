@@ -14,17 +14,17 @@ import (
 )
 
 type Simple struct {
-	r *rand.Rand
-	g game.Model
+	randomSource *rand.Rand
+	game         game.Model
 
 	mu sync.Mutex
 }
 
-func NewSimple(g game.Model) *Simple {
+func NewSimple(game game.Model) *Simple {
 	return &Simple{
-		r:  rand.New(rand.NewPCG(0, 0)),
-		g:  g,
-		mu: sync.Mutex{},
+		randomSource: rand.New(rand.NewPCG(0, 0)),
+		game:         game,
+		mu:           sync.Mutex{},
 	}
 }
 
@@ -32,52 +32,59 @@ func (s *Simple) Car() car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	classes := class.List(s.g)
-	class := classes[s.r.IntN(len(classes))]
+	classes := class.List(s.game)
+	class := classes[s.randomSource.IntN(len(classes))]
 
-	cars := car.InClass(class, s.g)
-	return cars[s.r.IntN(len(cars))]
+	cars := car.InClass(class, s.game)
+	return cars[s.randomSource.IntN(len(cars))]
 }
 
 func (s *Simple) CarFromClass(class class.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cars := car.InClass(class, s.g)
-	return cars[s.r.IntN(len(cars))]
+	cars := car.InClass(class, s.game)
+	return cars[s.randomSource.IntN(len(cars))]
 }
 
 func (s *Simple) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	classes := class.WithDrivetrain(drivetrain, s.g)
-	class := classes[s.r.IntN(len(classes))]
+	classes := class.WithDrivetrain(drivetrain, s.game)
+	class := classes[s.randomSource.IntN(len(classes))]
 
-	cars := car.InClass(class, s.g)
-	return cars[s.r.IntN(len(cars))]
+	cars := car.InClass(class, s.game)
+	return cars[s.randomSource.IntN(len(cars))]
 }
 
 func (s *Simple) Loc() location.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	locs := location.List(s.g)
-	return locs[s.r.IntN(len(locs))]
+	locs := location.List(s.game)
+	return locs[s.randomSource.IntN(len(locs))]
 }
 
-func (s *Simple) Stage(loc location.Model) stage.Model {
+func (s *Simple) Stage(location location.Model) stage.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	stages := stage.AtLocation(loc)
-	return stages[s.r.IntN(len(stages))]
+	stages := stage.AtLocation(location)
+	return stages[s.randomSource.IntN(len(stages))]
 }
 
-func (s *Simple) Weather(loc location.Model) weather.Model {
+func (s *Simple) StageOfDistance(location location.Model, distance stage.Distance) stage.Model {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stages := stage.AtLocationWithDistance(location, distance)
+	return stages[s.randomSource.IntN(len(stages))]
+}
+
+func (s *Simple) Weather(location location.Model) weather.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	weathers := loc.Weather()
-	return weathers[s.r.IntN(len(weathers))]
+	weathers := location.Weather()
+	return weathers[s.randomSource.IntN(len(weathers))]
 }

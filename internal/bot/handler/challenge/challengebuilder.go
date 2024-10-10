@@ -30,6 +30,7 @@ const (
 	componentIndex = 2
 
 	locationID               = "location"
+	distanceID               = "distance"
 	stageID                  = "stage"
 	weatherID                = "weather"
 	SubmitLocationAndStageID = "submit1"
@@ -55,6 +56,11 @@ func buildChallengeLocationMessageComponents(config challenge.Config) []discordg
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				buildLocationsMenu(config),
+			},
+		},
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				buildDistanceMenu(config),
 			},
 		},
 		discordgo.ActionsRow{
@@ -155,6 +161,51 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 }
 
+func buildDistanceMenu(config challenge.Config) discordgo.SelectMenu {
+	var selected string
+	if config.Distance != nil {
+		selected = strings.ToLower(config.Distance.String())
+	}
+
+	options := []discordgo.SelectMenuOption{
+		randomOption("Distance"),
+	}
+
+	hasDefault := false
+	distances := []stage.Distance{
+		stage.Short,
+		stage.Long,
+	}
+	if config.Game == game.WRC {
+		distances = append(distances, stage.ReallyLong)
+	}
+
+	for _, distance := range distances {
+		distanceID := strings.ToLower(distance.String())
+		if distanceID == selected {
+			hasDefault = true
+		}
+
+		options = append(options, discordgo.SelectMenuOption{
+			Label:   distance.String(),
+			Value:   distanceID,
+			Emoji:   &discordgo.ComponentEmoji{Name: distance.Emoji()},
+			Default: distanceID == selected,
+		})
+	}
+
+	if !hasDefault {
+		options[0].Default = true
+	}
+
+	return discordgo.SelectMenu{
+		Placeholder: "Distance",
+		MenuType:    discordgo.StringSelectMenu,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), distanceID}, idFieldDelimiter),
+		Options:     options,
+	}
+}
+
 func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	var selected string
 	if config.Stage != nil {
@@ -162,7 +213,7 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	}
 
 	options := []discordgo.SelectMenuOption{
-		randomOption("Stage"),
+		randomOption("Random"),
 	}
 
 	hasDefault := false
@@ -172,6 +223,10 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 			stageID := strings.ToLower(stage.Name())
 			if stageID == selected {
 				hasDefault = true
+			}
+
+			if config.Distance != nil && *config.Distance != stage.Distance() {
+				continue
 			}
 
 			options = append(options, discordgo.SelectMenuOption{
@@ -413,19 +468,16 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 
 	gameID := customIDFields[gameIndex]
 	changedComponentID := customIDFields[componentIndex]
-	fmt.Println(customIDFields)
 
 	var newValue string
 	if changedComponentID != SubmitCarID && changedComponentID != SubmitLocationAndStageID {
 		newValue = interaction.MessageComponentData().Values[0]
 	}
-	fmt.Println("newValue", newValue)
 
 	whichGame := gameFromID(gameID)
 	if whichGame == game.NotSet {
 		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", gameID)
 	}
-	fmt.Println("game", whichGame)
 
 	config := challenge.Config{Game: whichGame}
 
@@ -447,7 +499,6 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 				if option.Default {
 					componentID := strings.Split(component.CustomID, idFieldDelimiter)[componentIndex]
 					componentValues[componentID] = option.Value
-					fmt.Println("found default", component.CustomID, option.Value)
 					break
 				}
 			}
@@ -456,18 +507,16 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 		}
 	}
 
-	fmt.Println(componentValues)
-
 	config = applyLocation(config, componentValues[locationID])
+	config = applyDistance(config, componentValues[distanceID])
 	config = applyStage(config, componentValues[stageID])
 	config = applyWeather(config, componentValues[weatherID])
 
-	fmt.Println(config)
-
-	fmt.Println("changedID", changedComponentID)
 	switch changedComponentID {
 	case locationID:
 		config = applyLocation(config, newValue)
+	case distanceID:
+		config = applyDistance(config, newValue)
 	case stageID:
 		config = applyStage(config, newValue)
 	case weatherID:
@@ -533,7 +582,12 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), locationID):
 				componentValues[locationID] = strings.ToLower(emojiDelimited[1])
 			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), stageID):
-				componentValues[stageID] = strings.ToLower(emojiDelimited[1])
+				stageString := strings.ToLower(emojiDelimited[1])
+				split := strings.Split(stageString, " ")
+				if len(split) > 2 {
+					componentValues[distanceID] = split[len(split)-2] + " " + split[len(split)-1]
+				}
+				componentValues[stageID] = stageString
 			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), weatherID):
 				componentValues[weatherID] = strings.ToLower(emojiDelimited[1])
 			}
@@ -541,6 +595,7 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 	}
 
 	config = applyLocation(config, componentValues[locationID])
+	config = applyDistance(config, componentValues[distanceID])
 	config = applyStage(config, componentValues[stageID])
 	config = applyWeather(config, componentValues[weatherID])
 	config = applyDrivetrain(config, componentValues[drivetrainID])
@@ -569,8 +624,28 @@ func gameFromID(gameID string) game.Model {
 	return game.NotSet
 }
 
+func extractDistanceIfPresent(stageID string) stage.Distance {
+	split := strings.Split(stageID, " ")
+	if len(split) < 2 {
+		return stage.Unknown
+	}
+
+	if split[len(split)-1] != "sector" {
+		return stage.Unknown
+	}
+
+	switch split[len(split)-2] {
+	case "4":
+		return stage.Short
+	case "8":
+		return stage.Long
+	case "16":
+		return stage.ReallyLong
+	}
+	return stage.Unknown
+}
+
 func applyLocation(config challenge.Config, value string) challenge.Config {
-	fmt.Println("applying loc")
 	if value == RandomID {
 		config.Stage = nil
 		config.Weather = nil
@@ -578,7 +653,6 @@ func applyLocation(config challenge.Config, value string) challenge.Config {
 	}
 
 	for _, loc := range location.List(config.Game) {
-		fmt.Println("loc:", loc)
 		if value == strings.ToLower(loc.String()) {
 			config.Location = &loc
 			return config
@@ -590,11 +664,33 @@ func applyLocation(config challenge.Config, value string) challenge.Config {
 	return config
 }
 
+func applyDistance(config challenge.Config, value string) challenge.Config {
+	if value == RandomID {
+		return config
+	}
+
+	switch value {
+	case strings.ToLower(stage.Short.String()):
+		distance := stage.Short
+		config.Distance = &distance
+		return config
+	case strings.ToLower(stage.Long.String()):
+		distance := stage.Long
+		config.Distance = &distance
+		return config
+	case strings.ToLower(stage.ReallyLong.String()):
+		distance := stage.ReallyLong
+		config.Distance = &distance
+		return config
+	}
+
+	config.Distance = nil
+
+	return config
+}
+
 func applyStage(config challenge.Config, value string) challenge.Config {
-	fmt.Println("applying stage", value)
-	fmt.Println("config", config)
 	if value == RandomID || config.Location == nil {
-		fmt.Println("resetting config")
 		return config
 	}
 
@@ -611,7 +707,6 @@ func applyStage(config challenge.Config, value string) challenge.Config {
 }
 
 func applyWeather(config challenge.Config, value string) challenge.Config {
-	fmt.Println("applying weather")
 	if value == RandomID {
 		return config
 	}

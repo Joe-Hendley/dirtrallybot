@@ -15,6 +15,20 @@ const (
 	Unknown
 )
 
+func (d Distance) String() string {
+	switch d {
+	case Short:
+		return "4 Sector"
+	case Long:
+		return "8 Sector"
+	case ReallyLong:
+		return "16 Sector"
+	case Unknown:
+		return "❓"
+	}
+	return "invalid distance"
+}
+
 func (d Distance) Emoji() string {
 	switch d {
 	case Short:
@@ -61,6 +75,18 @@ func (m Model) FancyString() string {
 
 func (m Model) Location() location.Model {
 	return m.location
+}
+
+func AtLocationWithDistance(l location.Model, d Distance) []Model {
+	atLocation := AtLocation(l)
+	withDistance := []Model{}
+	for _, stage := range atLocation {
+		if stage.distance == d {
+			withDistance = append(withDistance, stage)
+		}
+	}
+
+	return withDistance
 }
 
 func AtLocation(l location.Model) []Model {

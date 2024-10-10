@@ -184,6 +184,7 @@ type Config struct {
 	Game game.Model
 
 	Location *location.Model
+	Distance *stage.Distance
 	Stage    *stage.Model
 	Weather  *weather.Model
 
@@ -228,6 +229,10 @@ func (c Config) FancyStageString() string {
 		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
 	} else if c.Location != nil {
 		locationString = c.Location.Flag() + " " + EmojiDelimiter + c.Location.String()
+	}
+
+	if c.Stage == nil && c.Distance != nil {
+		stageString = c.Distance.Emoji() + " " + EmojiDelimiter + RandomString + " " + c.Distance.String()
 	}
 
 	locationHasOneWeatherType := c.Location != nil && len(c.Location.Weather()) == 1

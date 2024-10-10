@@ -99,7 +99,7 @@ func HandleChallengeBuilderInteraction(store model.Store, session discord.Sessio
 	lastField := split[len(split)-1]
 
 	switch lastField {
-	case locationID, stageID, weatherID:
+	case locationID, distanceID, stageID, weatherID:
 		updateLocationSelectMessage(session, interaction)
 	case SubmitLocationAndStageID, drivetrainID, classID, carID:
 		updateCarSelectMessage(session, interaction)
@@ -109,10 +109,7 @@ func HandleChallengeBuilderInteraction(store model.Store, session discord.Sessio
 }
 
 func updateLocationSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
-	fmt.Println("LOC")
 	config, err := buildStageConfigFromInteraction(interaction)
-
-	fmt.Println(config)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Location Config", "err", err)
@@ -135,10 +132,7 @@ func updateLocationSelectMessage(session discord.InteractionResponder, interacti
 }
 
 func updateCarSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
-	fmt.Println("CAR")
 	config, err := buildCarConfigFromInteraction(interaction)
-
-	fmt.Println(config)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Car Config", "err", err)
@@ -161,7 +155,6 @@ func updateCarSelectMessage(session discord.InteractionResponder, interaction *d
 }
 
 func updateSelectMessageAndCreateChallenge(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
-	fmt.Println("FIN")
 	config, err := buildCarConfigFromInteraction(interaction)
 
 	if err != nil {
