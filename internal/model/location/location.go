@@ -312,7 +312,7 @@ func (m Model) Weather() []weather.Model {
 	switch m {
 	case MCO:
 		return []weather.Model{weather.DRY}
-	case SWE, SWE_WRC:
+	case SWE, SWE_WRC, SCA:
 		return []weather.Model{weather.SNOW}
 	default:
 		return []weather.Model{weather.DRY, weather.WET}
@@ -335,6 +335,7 @@ const (
 
 func WeatherStrings() locationWeatherStringMap {
 	return locationWeatherStringMap{
+		// DR2
 		ARG: {
 			weather.DRY: DAYCLEARDRY,
 			weather.WET: DUSKHEAVYRAINWET,
@@ -384,6 +385,78 @@ func WeatherStrings() locationWeatherStringMap {
 		WAL: {
 			weather.DRY: DAYCLEARDRY,
 			weather.WET: SUNSETCLOUDYWET,
+		},
+
+		// WRC
+		MCO_WRC: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		SWE_WRC: {
+			weather.SNOW: DAYCLOUDYSNOW,
+		},
+		MEX: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		HRV: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		PRT: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		ITA: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		KEN: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		EST: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		FIN_WRC: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		GRC_WRC: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		CHL: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		CER: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		JPN: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		MED: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		PAC: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		UUU: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
+		},
+		SCA: {
+			weather.SNOW: DAYCLOUDYSNOW,
+		},
+		IBE: {
+			weather.DRY: DAYCLEARDRY,
+			weather.WET: DAYCLOUDYWET,
 		},
 	}
 }
