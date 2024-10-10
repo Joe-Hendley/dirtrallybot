@@ -3,6 +3,7 @@ package challenge
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model"
@@ -13,23 +14,27 @@ import (
 )
 
 const (
-	CompletedID = "challenge-completion-add"
-	TimesID     = "challenge-completion-display"
-	GoodID      = "challenge-feedback-good"
-	BadID       = "challenge-feedback-bad"
+	idFieldDelimiter = "-"
 
-	ResponseSuffix  = "response"
-	ChallengePrefix = "challenge-"
+	CompletedID = "completion-add"
+	TimesID     = "completion-display"
+	GoodID      = "feedback-good"
+	BadID       = "feedback-bad"
 
-	NewDR2ChallengeID             = "newstage"
-	InitialDR2ChallengeResponseID = DR2ChallengePrefix + ResponseSuffix
-	DR2Prefix                     = "dr2-"
-	DR2ChallengePrefix            = ChallengePrefix + DR2Prefix
+	NewChallengeID = "newstage"
+	ResponseID     = "response"
+	ChallengeID    = "challenge"
 
-	NewWRCChallengeID             = "newstage-wrc"
-	InitialWRCChallengeResponseID = WRCChallengePrefix + ResponseSuffix
-	WRCPrefix                     = "wrc-"
-	WRCChallengePrefix            = ChallengePrefix + WRCPrefix
+	DR2ID = "dr2"
+	WRCID = "wrc"
+
+	NewDR2ChallengeID             = NewChallengeID + idFieldDelimiter + DR2ID
+	DR2ChallengePrefix            = ChallengeID + idFieldDelimiter + DR2ID
+	InitialDR2ChallengeResponseID = DR2ChallengePrefix + idFieldDelimiter + ResponseID
+
+	NewWRCChallengeID             = NewChallengeID + idFieldDelimiter + WRCID
+	WRCChallengePrefix            = ChallengeID + idFieldDelimiter + WRCID
+	InitialWRCChallengeResponseID = WRCChallengePrefix + idFieldDelimiter + ResponseID
 )
 
 func NewInvocationFromMessageCreate(m discordgo.MessageCreate) invocation {
@@ -90,11 +95,13 @@ func HandleNewWRCChallenge(session discord.InteractionResponder, interaction *di
 }
 
 func HandleChallengeBuilderInteraction(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
-	stripped := interaction.MessageComponentData().CustomID[4:]
-	switch stripped {
-	case LocationSelectID, StageSelectID, WeatherSelectID:
+	split := strings.Split(interaction.MessageComponentData().CustomID, idFieldDelimiter)
+	lastField := split[len(split)-1]
+
+	switch lastField {
+	case locationID, stageID, weatherID:
 		updateLocationSelectMessage(session, interaction)
-	case SubmitLocationAndStageID, DrivetrainSelectID, ClassSelectID, CarSelectID:
+	case SubmitLocationAndStageID, drivetrainID, classID, carID:
 		updateCarSelectMessage(session, interaction)
 	case SubmitCarID:
 		updateSelectMessageAndCreateChallenge(store, session, interaction)
@@ -102,7 +109,10 @@ func HandleChallengeBuilderInteraction(store model.Store, session discord.Sessio
 }
 
 func updateLocationSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	fmt.Println("LOC")
 	config, err := buildStageConfigFromInteraction(interaction)
+
+	fmt.Println(config)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Location Config", "err", err)
@@ -125,7 +135,10 @@ func updateLocationSelectMessage(session discord.InteractionResponder, interacti
 }
 
 func updateCarSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	fmt.Println("CAR")
 	config, err := buildCarConfigFromInteraction(interaction)
+
+	fmt.Println(config)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Car Config", "err", err)
@@ -148,6 +161,7 @@ func updateCarSelectMessage(session discord.InteractionResponder, interaction *d
 }
 
 func updateSelectMessageAndCreateChallenge(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+	fmt.Println("FIN")
 	config, err := buildCarConfigFromInteraction(interaction)
 
 	if err != nil {

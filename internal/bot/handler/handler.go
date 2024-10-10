@@ -35,7 +35,7 @@ func InteractionMessageComponent(store model.Store, session discord.Session, int
 		completion.HandleDisplayEntryModal(session, interaction)
 	case customID == challenge.TimesID:
 		completion.HandleDisplayTimes(store, session, interaction)
-	case strings.HasPrefix(customID, challenge.DR2ChallengePrefix) || strings.HasPrefix(customID, challenge.WRCChallengePrefix):
+	case strings.HasPrefix(customID, challenge.ChallengeID):
 		challenge.HandleChallengeBuilderInteraction(store, session, interaction)
 	}
 }

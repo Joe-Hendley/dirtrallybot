@@ -3,7 +3,6 @@ package challenge
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
@@ -27,22 +26,29 @@ const (
 
 	baseMessage = "%s Challenge Builder v0.0.1"
 
-	locationFieldID          = "location"
-	LocationSelectID         = ChallengePrefix + locationFieldID
-	stageFieldID             = "stage"
-	StageSelectID            = ChallengePrefix + stageFieldID
-	weatherFieldID           = "weather"
-	WeatherSelectID          = ChallengePrefix + weatherFieldID
-	SubmitLocationAndStageID = ChallengePrefix + "submit-1"
+	gameIndex      = 1
+	componentIndex = 2
 
-	drivetrainFieldID  = "drivetrain"
-	DrivetrainSelectID = ChallengePrefix + drivetrainFieldID
-	classFieldID       = "class"
-	ClassSelectID      = ChallengePrefix + classFieldID
-	carFieldID         = "car"
-	CarSelectID        = ChallengePrefix + carFieldID
-	SubmitCarID        = ChallengePrefix + "submit-2"
+	locationID               = "location"
+	stageID                  = "stage"
+	weatherID                = "weather"
+	SubmitLocationAndStageID = "submit1"
+
+	drivetrainID = "drivetrain"
+	classID      = "class"
+	carID        = "car"
+	SubmitCarID  = "submit2"
 )
+
+func gameIDString(config challenge.Config) string {
+	switch config.Game {
+	case game.DR2:
+		return "dr2"
+	case game.WRC:
+		return "wrc"
+	}
+	return ""
+}
 
 func buildChallengeLocationMessageComponents(config challenge.Config) []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
@@ -67,7 +73,7 @@ func buildChallengeLocationMessageComponents(config challenge.Config) []discordg
 					Label:    "Submit Stage",
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
-					CustomID: SubmitLocationAndStageID,
+					CustomID: strings.Join([]string{ChallengeID, gameIDString(config), SubmitLocationAndStageID}, idFieldDelimiter),
 				},
 			},
 		},
@@ -97,7 +103,7 @@ func buildChallengeCarMessageComponents(config challenge.Config) []discordgo.Mes
 					Label:    "Submit",
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
-					CustomID: SubmitCarID,
+					CustomID: strings.Join([]string{ChallengeID, gameIDString(config), SubmitCarID}, idFieldDelimiter),
 				},
 			},
 		},
@@ -144,7 +150,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Location",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    LocationSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), locationID}, idFieldDelimiter),
 		Options:     options,
 	}
 }
@@ -185,7 +191,7 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Stage",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    StageSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), stageID}, idFieldDelimiter),
 		Options:     options,
 		Disabled:    len(options) == 1,
 	}
@@ -261,7 +267,7 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Weather",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    WeatherSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), weatherID}, idFieldDelimiter),
 		Options:     options,
 		Disabled:    len(options) == 1,
 	}
@@ -300,7 +306,7 @@ func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Drivetrain",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    DrivetrainSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), drivetrainID}, idFieldDelimiter),
 		Options:     options,
 	}
 }
@@ -352,7 +358,7 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Class",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    ClassSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), classID}, idFieldDelimiter),
 		Options:     options,
 		Disabled:    len(options) == 1,
 	}
@@ -392,7 +398,7 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 	return discordgo.SelectMenu{
 		Placeholder: "Car",
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    CarSelectID,
+		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), carID}, idFieldDelimiter),
 		Options:     options,
 		Disabled:    len(options) == 1,
 	}
@@ -400,15 +406,26 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 
 func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (challenge.Config, error) {
 	customID := interaction.MessageComponentData().CustomID
-	var newValue string
-	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
-		newValue = interaction.MessageComponentData().Values[0]
+	customIDFields := strings.Split(customID, idFieldDelimiter)
+	if len(customIDFields) != 3 {
+		return challenge.Config{}, fmt.Errorf("unexpected customID %s", customID)
 	}
 
-	whichGame := identifyGameFromCustomID(customID)
-	if whichGame == game.NotSet {
-		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", customID)
+	gameID := customIDFields[gameIndex]
+	changedComponentID := customIDFields[componentIndex]
+	fmt.Println(customIDFields)
+
+	var newValue string
+	if changedComponentID != SubmitCarID && changedComponentID != SubmitLocationAndStageID {
+		newValue = interaction.MessageComponentData().Values[0]
 	}
+	fmt.Println("newValue", newValue)
+
+	whichGame := gameFromID(gameID)
+	if whichGame == game.NotSet {
+		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", gameID)
+	}
+	fmt.Println("game", whichGame)
 
 	config := challenge.Config{Game: whichGame}
 
@@ -428,7 +445,9 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 		case *discordgo.SelectMenu:
 			for _, option := range component.Options {
 				if option.Default {
-					componentValues[component.CustomID] = option.Value
+					componentID := strings.Split(component.CustomID, idFieldDelimiter)[componentIndex]
+					componentValues[componentID] = option.Value
+					fmt.Println("found default", component.CustomID, option.Value)
 					break
 				}
 			}
@@ -437,16 +456,21 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 		}
 	}
 
-	config = applyLocation(config, componentValues[LocationSelectID])
-	config = applyStage(config, componentValues[StageSelectID])
-	config = applyWeather(config, componentValues[WeatherSelectID])
+	fmt.Println(componentValues)
 
-	switch customID {
-	case LocationSelectID:
+	config = applyLocation(config, componentValues[locationID])
+	config = applyStage(config, componentValues[stageID])
+	config = applyWeather(config, componentValues[weatherID])
+
+	fmt.Println(config)
+
+	fmt.Println("changedID", changedComponentID)
+	switch changedComponentID {
+	case locationID:
 		config = applyLocation(config, newValue)
-	case StageSelectID:
+	case stageID:
 		config = applyStage(config, newValue)
-	case WeatherSelectID:
+	case weatherID:
 		config = applyWeather(config, newValue)
 	}
 
@@ -455,14 +479,22 @@ func buildStageConfigFromInteraction(interaction *discordgo.InteractionCreate) (
 
 func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (challenge.Config, error) {
 	customID := interaction.MessageComponentData().CustomID
+	customIDFields := strings.Split(customID, idFieldDelimiter)
+	if len(customIDFields) != 3 {
+		return challenge.Config{}, fmt.Errorf("unexpected customID %s", customID)
+	}
+
+	gameID := customIDFields[gameIndex]
+	changedComponentID := customIDFields[componentIndex]
+
 	var newValue string
-	if customID != SubmitCarID && customID != SubmitLocationAndStageID {
+	if changedComponentID != SubmitCarID && changedComponentID != SubmitLocationAndStageID {
 		newValue = interaction.MessageComponentData().Values[0]
 	}
 
-	whichGame := identifyGameFromCustomID(customID)
+	whichGame := gameFromID(gameID)
 	if whichGame == game.NotSet {
-		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", customID)
+		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", gameID)
 	}
 
 	config := challenge.Config{Game: whichGame}
@@ -483,7 +515,8 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 		case *discordgo.SelectMenu:
 			for _, option := range component.Options {
 				if option.Default {
-					componentValues[component.CustomID] = option.Value
+					componentID := strings.Split(component.CustomID, idFieldDelimiter)[componentIndex]
+					componentValues[componentID] = option.Value
 					break
 				}
 			}
@@ -497,49 +530,47 @@ func buildCarConfigFromInteraction(interaction *discordgo.InteractionCreate) (ch
 		emojiDelimited := strings.Split(line, challenge.EmojiDelimiter)
 		if len(emojiDelimited) > 1 {
 			switch {
-			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), locationFieldID):
-				componentValues[LocationSelectID] = strings.ToLower(emojiDelimited[1])
-			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), stageFieldID):
-				componentValues[StageSelectID] = strings.ToLower(emojiDelimited[1])
-			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), weatherFieldID):
-				componentValues[WeatherSelectID] = strings.ToLower(emojiDelimited[1])
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), locationID):
+				componentValues[locationID] = strings.ToLower(emojiDelimited[1])
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), stageID):
+				componentValues[stageID] = strings.ToLower(emojiDelimited[1])
+			case strings.HasPrefix(strings.ToLower(emojiDelimited[0]), weatherID):
+				componentValues[weatherID] = strings.ToLower(emojiDelimited[1])
 			}
 		}
 	}
 
-	config = applyLocation(config, componentValues[LocationSelectID])
-	config = applyStage(config, componentValues[StageSelectID])
-	config = applyWeather(config, componentValues[WeatherSelectID])
-	config = applyDrivetrain(config, componentValues[DrivetrainSelectID])
-	config = applyClass(config, componentValues[ClassSelectID])
-	config = applyCar(config, componentValues[CarSelectID])
+	config = applyLocation(config, componentValues[locationID])
+	config = applyStage(config, componentValues[stageID])
+	config = applyWeather(config, componentValues[weatherID])
+	config = applyDrivetrain(config, componentValues[drivetrainID])
+	config = applyClass(config, componentValues[classID])
+	config = applyCar(config, componentValues[carID])
 
-	switch customID {
-	case DrivetrainSelectID:
+	switch changedComponentID {
+	case drivetrainID:
 		config = applyDrivetrain(config, newValue)
-	case ClassSelectID:
+	case classID:
 		config = applyClass(config, newValue)
-	case CarSelectID:
+	case carID:
 		config = applyCar(config, newValue)
 	}
 
 	return config, nil
 }
 
-func identifyGameFromCustomID(customID string) game.Model {
-	if strings.HasPrefix(customID, DR2ChallengePrefix) {
+func gameFromID(gameID string) game.Model {
+	switch gameID {
+	case DR2ID:
 		return game.DR2
-	}
-
-	if strings.HasPrefix(customID, WRCChallengePrefix) {
+	case WRCID:
 		return game.WRC
 	}
-
-	slog.Error("bad customid", "customid", customID)
 	return game.NotSet
 }
 
 func applyLocation(config challenge.Config, value string) challenge.Config {
+	fmt.Println("applying loc")
 	if value == RandomID {
 		config.Stage = nil
 		config.Weather = nil
@@ -547,6 +578,7 @@ func applyLocation(config challenge.Config, value string) challenge.Config {
 	}
 
 	for _, loc := range location.List(config.Game) {
+		fmt.Println("loc:", loc)
 		if value == strings.ToLower(loc.String()) {
 			config.Location = &loc
 			return config
@@ -559,7 +591,10 @@ func applyLocation(config challenge.Config, value string) challenge.Config {
 }
 
 func applyStage(config challenge.Config, value string) challenge.Config {
+	fmt.Println("applying stage", value)
+	fmt.Println("config", config)
 	if value == RandomID || config.Location == nil {
+		fmt.Println("resetting config")
 		return config
 	}
 
@@ -576,6 +611,7 @@ func applyStage(config challenge.Config, value string) challenge.Config {
 }
 
 func applyWeather(config challenge.Config, value string) challenge.Config {
+	fmt.Println("applying weather")
 	if value == RandomID {
 		return config
 	}
