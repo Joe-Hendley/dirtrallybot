@@ -193,7 +193,7 @@ func updateMessageWithError(session discord.InteractionResponder, interaction *d
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("☹️ an error occured, please contact an administrator"),
+			Content: "☹️ an error occured, please contact an administrator",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})

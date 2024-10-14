@@ -624,27 +624,6 @@ func gameFromID(gameID string) game.Model {
 	return game.NotSet
 }
 
-func extractDistanceIfPresent(stageID string) stage.Distance {
-	split := strings.Split(stageID, " ")
-	if len(split) < 2 {
-		return stage.Unknown
-	}
-
-	if split[len(split)-1] != "sector" {
-		return stage.Unknown
-	}
-
-	switch split[len(split)-2] {
-	case "4":
-		return stage.Short
-	case "8":
-		return stage.Long
-	case "16":
-		return stage.ReallyLong
-	}
-	return stage.Unknown
-}
-
 func applyLocation(config challenge.Config, value string) challenge.Config {
 	if value == RandomID {
 		config.Stage = nil
