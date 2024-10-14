@@ -16,7 +16,7 @@ import (
 
 const (
 	SubmitCompletionPrefix = "completion-submit"
-	CompletionTextInputID  = "completion-input"
+	CompletionTextInputID  = "completion-submit-input"
 
 	challengeIDIndex = 1
 	userIDIndex      = 2

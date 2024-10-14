@@ -16,8 +16,8 @@ import (
 const (
 	idFieldDelimiter = "-"
 
-	CompletedID = "completion-add"
-	TimesID     = "completion-display"
+	CompletedID = "completion-display-modal"
+	TimesID     = "completion-display-times"
 	GoodID      = "feedback-good"
 	BadID       = "feedback-bad"
 

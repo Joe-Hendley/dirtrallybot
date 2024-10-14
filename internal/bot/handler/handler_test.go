@@ -1,11 +1,12 @@
 package handler_test
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/completion"
 	"github.com/bwmarrin/discordgo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,6 +27,9 @@ type routingTestCase struct {
 	title, incomingID, outgoingID string
 }
 
+// When we recieve an application interaction,
+// with a customID corresponding to "new challenge",
+// we respond with the correct message.
 func TestNewChallengeRouting(t *testing.T) {
 	testData := []routingTestCase{
 		{title: "TestHandleNewDR2Challenge", incomingID: challenge.NewDR2ChallengeID, outgoingID: challenge.InitialDR2ChallengeResponseID},
@@ -36,9 +40,10 @@ func TestNewChallengeRouting(t *testing.T) {
 		t.Run(testCase.title, func(t *testing.T) {
 			// Arrange
 			interaction := createApplicationCommandInteraction(testCase.incomingID)
+			var expectedOptions []discordgo.RequestOption
 
 			session := new(sessionMock)
-			session.On("InteractionRespond", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			session.On("InteractionRespond", interaction.Interaction, mock.AnythingOfType("*discordgo.InteractionResponse"), expectedOptions).Return(nil)
 
 			// Act
 			handler.ApplicationCommand(session, &interaction)
@@ -57,33 +62,58 @@ func TestNewChallengeRouting(t *testing.T) {
 		})
 	}
 }
+func TestSubmitCompletion(t *testing.T) {
+	// When we recieve a message component interaction,
+	// with a customID corresponding to "display completion entry modal",
+	// we respond with the completion submission modal
+	t.Run("TestDisplayCompletionEntryModal", func(t *testing.T) {
+		// Arrange
+		var (
+			expectedOptions []discordgo.RequestOption
 
-var _ discord.Session = &sessionMock{}
+			expectedUserID     = "someUserID"
+			expectedMessageID  = "someMessageID"
+			expectedResponseID = strings.Join([]string{completion.SubmitCompletionPrefix, expectedMessageID, expectedUserID}, "-")
+		)
+		interaction := discordgo.InteractionCreate{
+			Interaction: &discordgo.Interaction{
+				Type: discordgo.InteractionMessageComponent,
+				Data: discordgo.MessageComponentInteractionData{
+					CustomID: challenge.CompletedID,
+				},
+				Member: &discordgo.Member{
+					User: &discordgo.User{
+						ID: expectedUserID,
+					},
+				},
+				Message: &discordgo.Message{
+					ID: expectedMessageID,
+				},
+			},
+		}
 
-type sessionMock struct {
-	mock.Mock
-}
+		store := new(storeMock)
+		session := new(sessionMock)
+		session.On("InteractionRespond", interaction.Interaction, mock.AnythingOfType("*discordgo.InteractionResponse"), expectedOptions).Return(nil)
 
-// ChannelMessageEditComplex implements discord.Session.
-func (sm *sessionMock) ChannelMessageEditComplex(m *discordgo.MessageEdit, options ...discordgo.RequestOption) (st *discordgo.Message, err error) {
-	args := sm.Called(m, options)
-	return args.Get(0).(*discordgo.Message), args.Error(1)
-}
+		// Act
+		handler.InteractionMessageComponent(store, session, &interaction)
 
-// ChannelMessageSendComplex implements discord.Session.
-func (sm *sessionMock) ChannelMessageSendComplex(channelID string, data *discordgo.MessageSend, options ...discordgo.RequestOption) (st *discordgo.Message, err error) {
-	args := sm.Called(channelID, data, options)
-	return args.Get(0).(*discordgo.Message), args.Error(1)
-}
+		// Assert
+		store.AssertExpectations(t)
+		session.AssertExpectations(t)
 
-// GuildMember implements discord.Session.
-func (sm *sessionMock) GuildMember(guildID string, userID string, options ...discordgo.RequestOption) (st *discordgo.Member, err error) {
-	args := sm.Called(guildID, userID, options)
-	return args.Get(0).(*discordgo.Member), args.Error(1)
-}
+		if assert.NotNil(t, session.Calls[0].Arguments[1]) {
+			response := session.Calls[0].Arguments[1].(*discordgo.InteractionResponse)
 
-// InteractionRespond implements discord.Session.
-func (sm *sessionMock) InteractionRespond(interaction *discordgo.Interaction, resp *discordgo.InteractionResponse, options ...discordgo.RequestOption) error {
-	args := sm.Called(interaction, resp, options)
-	return args.Error(0)
+			assert.Equal(t, discordgo.InteractionResponseModal, response.Type)
+			if assert.NotNil(t, response.Data) {
+				assert.Equal(t, expectedResponseID, response.Data.CustomID)
+			}
+		}
+	})
+	// When we recieve a modal submit interaction,
+	// with a customID corresponding to "submit completion",
+	// we store the completion against the corresponding challenge
+	// and update the challenge message if the top three has changed
 }
