@@ -16,19 +16,19 @@ func TestParse(t *testing.T) {
 	data := []dataFormat{
 		{
 			input: "23:2.999",
-			want:  buildTimestamp(23, 2, 999),
+			want:  Build(23, 2, 999),
 		},
 		{
 			input: "12:34.567",
-			want:  buildTimestamp(12, 34, 567),
+			want:  Build(12, 34, 567),
 		},
 		{
 			input: "1:23.45",
-			want:  buildTimestamp(1, 23, 450),
+			want:  Build(1, 23, 450),
 		},
 		{
 			input: "1:2.3",
-			want:  buildTimestamp(1, 2, 300),
+			want:  Build(1, 2, 300),
 		},
 	}
 
@@ -50,19 +50,19 @@ func TestFormat(t *testing.T) {
 
 	data := []dataFormat{
 		{
-			input: buildTimestamp(23, 2, 999),
+			input: Build(23, 2, 999),
 			want:  "23:02.999",
 		},
 		{
-			input: buildTimestamp(12, 34, 567),
+			input: Build(12, 34, 567),
 			want:  "12:34.567",
 		},
 		{
-			input: buildTimestamp(1, 23, 450),
+			input: Build(1, 23, 450),
 			want:  " 1:23.450",
 		},
 		{
-			input: buildTimestamp(1, 2, 300),
+			input: Build(1, 2, 300),
 			want:  " 1:02.300",
 		},
 	}

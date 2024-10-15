@@ -40,7 +40,7 @@ func InteractionMessageComponent(store model.Store, session discord.Session, int
 	}
 }
 
-func ModalSubmit(store model.Store, session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func ModalSubmit(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}

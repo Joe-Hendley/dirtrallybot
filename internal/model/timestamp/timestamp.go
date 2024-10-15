@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func buildTimestamp(minutes, seconds, milliseconds int) time.Duration {
+func Build(minutes, seconds, milliseconds int) time.Duration {
 	return time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second + time.Duration(milliseconds)*time.Millisecond
 }
 
@@ -50,7 +50,7 @@ func Parse(s string) (time.Duration, error) {
 		return 0, fmt.Errorf("invalid timestamp %s", s)
 	}
 
-	return buildTimestamp(minutes, seconds, milliseconds), nil
+	return Build(minutes, seconds, milliseconds), nil
 }
 
 func Format(duration time.Duration) string {

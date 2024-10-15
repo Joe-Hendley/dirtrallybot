@@ -125,7 +125,7 @@ func (m *Model) RegisterCompletion(c Completion) {
 
 func (m *Model) TopThree() []Completion {
 	if len(m.completions) < 2 {
-		return []Completion{}
+		return m.completions
 	}
 
 	sorted := make([]Completion, len(m.completions))

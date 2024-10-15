@@ -17,10 +17,12 @@ import (
 const (
 	SubmitCompletionPrefix = "completion-submit"
 	CompletionTextInputID  = "completion-submit-input"
+	InvalidSubmissionID    = "completion-submit-input-invalid"
+	ValidSubmissionID      = "completion-submit-input-valid"
 
 	challengeIDIndex = 1
 	userIDIndex      = 2
-	customIDDelim    = "-"
+	customIDDelim    = "_"
 )
 
 func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
@@ -68,7 +70,7 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 		return
 	}
 
-	split := strings.Split(data.CustomID, "-")
+	split := strings.Split(data.CustomID, customIDDelim)
 	challengeID := split[challengeIDIndex]
 	userID := split[userIDIndex]
 
@@ -78,8 +80,9 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 		respErr := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "Timestamp needs to be submitted in format: mm:ss.mss",
-				Flags:   discordgo.MessageFlagsEphemeral,
+				Content:  "Timestamp needs to be submitted in format: mm:ss.mss",
+				Flags:    discordgo.MessageFlagsEphemeral,
+				CustomID: InvalidSubmissionID,
 			},
 		})
 
@@ -108,19 +111,20 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 		return
 	}
 
-	go updateTopThree(store, session, interaction.GuildID, split[1], split[2])
-
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Submitted time %s", rawDuration),
-			Flags:   discordgo.MessageFlagsEphemeral,
+			Content:  fmt.Sprintf("Submitted time %s", rawDuration),
+			Flags:    discordgo.MessageFlagsEphemeral,
+			CustomID: ValidSubmissionID,
 		},
 	})
 
 	if err != nil {
 		log.Printf("error sending response to valid timestamp: %v\n", err)
 	}
+
+	updateTopThree(store, session, interaction.GuildID, interaction.ChannelID, challengeID)
 }
 
 func medal(place int) string {
