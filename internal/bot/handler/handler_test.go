@@ -84,7 +84,7 @@ func TestSubmitCompletion(t *testing.T) {
 			Interaction: &discordgo.Interaction{
 				Type: discordgo.InteractionMessageComponent,
 				Data: discordgo.MessageComponentInteractionData{
-					CustomID: challenge.CompletedID,
+					CustomID: challenge.DisplayCompletionModalID,
 				},
 				Member: &discordgo.Member{
 					User: &discordgo.User{
@@ -122,7 +122,7 @@ func TestSubmitCompletion(t *testing.T) {
 	// with a customID corresponding to "submit completion",
 	// we respond to inform the user the time is invalid
 	// and do nothing else
-	t.Run("TestDisplayCompletionEntryModal_InvalidTimestamp", func(t *testing.T) {
+	t.Run("TestSubmitCompletion_InvalidTimestamp", func(t *testing.T) {
 		// Arrange
 		var (
 			expectedOptions []discordgo.RequestOption
@@ -178,7 +178,7 @@ func TestSubmitCompletion(t *testing.T) {
 	// we acknowledge the submission
 	// and store the completion against the corresponding challenge
 	// and update the challenge message if the top three has changed
-	t.Run("TestDisplayCompletionEntryModal_ValidTimestamp", func(t *testing.T) {
+	t.Run("TestSubmitCompletion_ValidTimestamp", func(t *testing.T) {
 		// Arrange
 		var (
 			expectedOptions []discordgo.RequestOption
@@ -248,4 +248,66 @@ func TestSubmitCompletion(t *testing.T) {
 			assert.Contains(t, *editedMessage.Content, username)
 		}
 	})
+}
+
+// When we recieve a message component interaction,
+// with a customID corresponding to "display all completions",
+// we respond with a message containing all completions
+func TestDisplayCompletion(t *testing.T) {
+	// Arrange
+	var (
+		expectedOptions []discordgo.RequestOption
+
+		userID             = "someUserID"
+		username           = "username"
+		guildID            = "someGuildID"
+		challengeID        = "someMessageID"
+		expectedResponseID = completion.DisplayTimesResponseID
+
+		completionTime     = timestamp.Build(1, 23, 450)
+		expectedCompletion = challengeModel.NewCompletion(userID, completionTime)
+		storedChallenge    = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion})
+	)
+	interaction := discordgo.InteractionCreate{
+		Interaction: &discordgo.Interaction{
+			Type: discordgo.InteractionMessageComponent,
+			Data: discordgo.MessageComponentInteractionData{
+				CustomID: challenge.DisplayTimesID,
+			},
+			Member: &discordgo.Member{
+				User: &discordgo.User{
+					ID: userID,
+				},
+			},
+			Message: &discordgo.Message{
+				ID: challengeID,
+			},
+			GuildID: guildID,
+		},
+	}
+
+	store := new(storeMock)
+	store.On("GetChallenge", challengeID).Return(storedChallenge, nil)
+	session := new(sessionMock)
+	session.On("InteractionRespond", interaction.Interaction, mock.AnythingOfType("*discordgo.InteractionResponse"), expectedOptions).Return(nil)
+	session.On("GuildMember", guildID, userID, expectedOptions).Return(&discordgo.Member{User: &discordgo.User{GlobalName: username}}, nil)
+
+	// Act
+	handler.InteractionMessageComponent(store, session, &interaction)
+
+	// Assert
+	store.AssertExpectations(t)
+	session.AssertExpectations(t)
+
+	if assert.NotNil(t, session.Calls[1].Arguments[1]) {
+		response := session.Calls[1].Arguments[1].(*discordgo.InteractionResponse)
+
+		assert.Equal(t, discordgo.InteractionResponseChannelMessageWithSource, response.Type)
+		if assert.NotNil(t, response.Data) {
+			assert.Equal(t, expectedResponseID, response.Data.CustomID)
+			assert.Contains(t, response.Data.Content, timestamp.Format(completionTime))
+			assert.Contains(t, response.Data.Content, username)
+		}
+	}
+
 }

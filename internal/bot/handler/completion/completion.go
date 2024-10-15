@@ -20,6 +20,8 @@ const (
 	InvalidSubmissionID    = "completion-submit-input-invalid"
 	ValidSubmissionID      = "completion-submit-input-valid"
 
+	DisplayTimesResponseID = "completion-display-response"
+
 	challengeIDIndex = 1
 	userIDIndex      = 2
 	customIDDelim    = "_"
@@ -100,7 +102,7 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 		respErr := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "error submitting timestamp - contact an administrator",
+				Content: "☹️ an error occurred submitting your time, please contact an administrator",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -179,7 +181,7 @@ func HandleDisplayTimes(store model.Store, session discord.Session, interaction 
 		return
 	}
 
-	userCompletionMap := challenge.FancyListCompletions()
+	userCompletionMap := challenge.UserCompletions()
 
 	type user struct {
 		id          string
@@ -201,11 +203,27 @@ func HandleDisplayTimes(store model.Store, session discord.Session, interaction 
 		return 0
 	})
 
+	buf := strings.Builder{}
+
+	for _, user := range users {
+		buf.Write([]byte("**" + user.displayName + "**\n"))
+		for _, completion := range userCompletionMap[user.id] {
+			buf.Write([]byte("\t" + timestamp.Format(completion) + "\n"))
+		}
+	}
+
+	const discordMaxMessageLength = 2000
+	if buf.Len() > discordMaxMessageLength {
+		buf.Reset()
+		buf.Write([]byte("☹️ unable to display all completions, please contact an administrator"))
+	}
+
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "",
-			Flags:   discordgo.MessageFlagsEphemeral,
+			Content:  buf.String(),
+			Flags:    discordgo.MessageFlagsEphemeral,
+			CustomID: DisplayTimesResponseID,
 		},
 	})
 

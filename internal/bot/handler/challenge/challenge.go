@@ -16,10 +16,10 @@ import (
 const (
 	idFieldDelimiter = "-"
 
-	CompletedID = "completion-display-modal"
-	TimesID     = "completion-display-times"
-	GoodID      = "feedback-good"
-	BadID       = "feedback-bad"
+	DisplayCompletionModalID = "completion-display-modal"
+	DisplayTimesID           = "completion-display-times"
+	GoodID                   = "feedback-good"
+	BadID                    = "feedback-bad"
 
 	NewChallengeID = "newstage"
 	ResponseID     = "response"
@@ -225,13 +225,13 @@ func getChallengeButtons() []discordgo.MessageComponent {
 					Emoji:    &discordgo.ComponentEmoji{Name: "⏱️"},
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
-					CustomID: CompletedID,
+					CustomID: DisplayCompletionModalID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "📋"},
 					Style:    discordgo.SecondaryButton,
 					Disabled: false,
-					CustomID: TimesID,
+					CustomID: DisplayTimesID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "👍"},

@@ -157,6 +157,20 @@ func (m *Model) TopThree() []Completion {
 	return topThree
 }
 
+func (m *Model) UserCompletions() map[string][]time.Duration {
+	if len(m.completions) == 0 {
+		return map[string][]time.Duration{}
+	}
+
+	userCompletions := make(map[string][]time.Duration)
+
+	for _, completion := range m.completions {
+		userCompletions[completion.userID] = append(userCompletions[completion.userID], completion.duration)
+	}
+
+	return userCompletions
+}
+
 func (m *Model) FancyListCompletions() map[string]string {
 	if len(m.completions) == 0 {
 		return map[string]string{}
