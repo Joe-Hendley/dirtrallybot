@@ -35,7 +35,7 @@ func TestParse(t *testing.T) {
 	for _, tc := range data {
 		t.Run(tc.input, func(t *testing.T) {
 			got, err := Parse(tc.input)
-			if assert.Nil(t, err) {
+			if assert.NoError(t, err) {
 				assert.Equal(t, tc.want, got)
 			}
 		})

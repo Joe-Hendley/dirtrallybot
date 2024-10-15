@@ -36,6 +36,6 @@ func TestTopThree(t *testing.T) {
 	t.Run("no completions -> empty array", func(t *testing.T) {
 		completions := []Completion{}
 		challenge := newChallengeWithCompletions(completions)
-		assert.Len(t, challenge.TopThree(), 0)
+		assert.Empty(t, challenge.TopThree())
 	})
 }
