@@ -27,10 +27,11 @@ break state reconstruction, and the `-` delimiter is never escaped.
       stale downstream selection (e.g. a stage from a different location) is
       dropped, and "random" now clears its own field
       (`internal/bot/handler/challenge/challengebuilder.go`)
-- [ ] Extract the repeated select-menu construction
-      (`random` option, option loop, `hasDefault` fallback) shared by
-      `buildLocationsMenu`, `buildDistanceMenu`, `buildStageMenu`,
-      `buildWeatherMenu`, `buildDriveTrainMenu`, `buildClassMenu`, `buildCarMenu`
+- [x] Extract the repeated select-menu construction
+      (`random` option, option loop, `hasDefault` fallback) into `buildSelectMenu`
+      over a `menuEntry` slice. Each builder now just maps its domain list to
+      entries; the weather one-option case stays bespoke
+      (`internal/bot/handler/challenge/challengebuilder.go`)
 - [x] Merge `HandleNewDR2Challenge` and `HandleNewWRCChallenge` into
       `HandleNewChallenge`, which derives the game from the command name. Fixes
       the WRC builder header, which read "Dirt Rally 2"

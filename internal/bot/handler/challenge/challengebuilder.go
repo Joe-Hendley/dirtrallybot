@@ -118,43 +118,74 @@ func randomOption(category string) discordgo.SelectMenuOption {
 	}
 }
 
+// menuEntry is one selectable value in a builder menu, before it is turned into
+// a discordgo option.
+type menuEntry struct {
+	label       string
+	value       string
+	emoji       string
+	description string
+}
+
+// buildSelectMenu assembles a string select menu with a leading "Random
+// <category>" option. When no entry matches selectedValue the random option
+// becomes the default, and a menu offering nothing but that option is disabled.
+func buildSelectMenu(config challenge.Config, component, category, selectedValue string, entries []menuEntry) discordgo.SelectMenu {
+	options := []discordgo.SelectMenuOption{randomOption(category)}
+
+	matched := false
+	for _, entry := range entries {
+		option := discordgo.SelectMenuOption{
+			Label:   entry.label,
+			Value:   entry.value,
+			Default: entry.value == selectedValue,
+		}
+		if entry.emoji != "" {
+			option.Emoji = &discordgo.ComponentEmoji{Name: entry.emoji}
+		}
+		if entry.description != "" {
+			option.Description = entry.description
+		}
+		if option.Default {
+			matched = true
+		}
+		options = append(options, option)
+	}
+
+	if !matched {
+		options[0].Default = true
+	}
+
+	return discordgo.SelectMenu{
+		Placeholder: category,
+		MenuType:    discordgo.StringSelectMenu,
+		CustomID:    buildComponentID(config, component),
+		Options:     options,
+		Disabled:    len(options) == 1,
+	}
+}
+
+func buildComponentID(config challenge.Config, component string) string {
+	return strings.Join([]string{ChallengeID, gameIDString(config), component}, idFieldDelimiter)
+}
+
 func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 	var selected string
 	if config.Location != nil {
 		selected = strings.ToLower(config.Location.String())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Location"),
-	}
-
-	hasDefault := false
-
+	entries := make([]menuEntry, 0, len(location.List(config.Game)))
 	for _, loc := range location.List(config.Game) {
-		locID := strings.ToLower(loc.String())
-		if locID == selected {
-			hasDefault = true
-		}
-
-		options = append(options, discordgo.SelectMenuOption{
-			Label:       loc.String(),
-			Value:       locID,
-			Emoji:       &discordgo.ComponentEmoji{Name: loc.Flag()},
-			Description: loc.DetailedString(),
-			Default:     locID == selected,
+		entries = append(entries, menuEntry{
+			label:       loc.String(),
+			value:       strings.ToLower(loc.String()),
+			emoji:       loc.Flag(),
+			description: loc.DetailedString(),
 		})
 	}
 
-	if !hasDefault {
-		options[0].Default = true
-	}
-
-	return discordgo.SelectMenu{
-		Placeholder: "Location",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), locationID}, idFieldDelimiter),
-		Options:     options,
-	}
+	return buildSelectMenu(config, locationID, "Location", selected, entries)
 }
 
 func buildDistanceMenu(config challenge.Config) discordgo.SelectMenu {
@@ -163,43 +194,21 @@ func buildDistanceMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Distance.String())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Distance"),
-	}
-
-	hasDefault := false
-	distances := []stage.Distance{
-		stage.Short,
-		stage.Long,
-	}
+	distances := []stage.Distance{stage.Short, stage.Long}
 	if config.Game == game.WRC {
 		distances = append(distances, stage.ReallyLong)
 	}
 
+	entries := make([]menuEntry, 0, len(distances))
 	for _, distance := range distances {
-		distanceID := strings.ToLower(distance.String())
-		if distanceID == selected {
-			hasDefault = true
-		}
-
-		options = append(options, discordgo.SelectMenuOption{
-			Label:   distance.String(),
-			Value:   distanceID,
-			Emoji:   &discordgo.ComponentEmoji{Name: distance.Emoji()},
-			Default: distanceID == selected,
+		entries = append(entries, menuEntry{
+			label: distance.String(),
+			value: strings.ToLower(distance.String()),
+			emoji: distance.Emoji(),
 		})
 	}
 
-	if !hasDefault {
-		options[0].Default = true
-	}
-
-	return discordgo.SelectMenu{
-		Placeholder: "Distance",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), distanceID}, idFieldDelimiter),
-		Options:     options,
-	}
+	return buildSelectMenu(config, distanceID, "Distance", selected, entries)
 }
 
 func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
@@ -208,44 +217,22 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Stage.Name())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Stage"),
-	}
-
-	hasDefault := false
-
+	var entries []menuEntry
 	if config.Location != nil {
-		for _, stage := range stage.AtLocation(*config.Location) {
-			stageID := strings.ToLower(stage.Name())
-			if stageID == selected {
-				hasDefault = true
-			}
-
-			if config.Distance != nil && *config.Distance != stage.Distance() {
+		for _, s := range stage.AtLocation(*config.Location) {
+			if config.Distance != nil && *config.Distance != s.Distance() {
 				continue
 			}
-
-			options = append(options, discordgo.SelectMenuOption{
-				Label:       stage.Name(),
-				Value:       stageID,
-				Emoji:       &discordgo.ComponentEmoji{Name: stage.Distance().Emoji()},
-				Description: stage.String(),
-				Default:     stageID == selected,
+			entries = append(entries, menuEntry{
+				label:       s.Name(),
+				value:       strings.ToLower(s.Name()),
+				emoji:       s.Distance().Emoji(),
+				description: s.String(),
 			})
 		}
 	}
 
-	if !hasDefault {
-		options[0].Default = true
-	}
-
-	return discordgo.SelectMenu{
-		Placeholder: "Stage",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), stageID}, idFieldDelimiter),
-		Options:     options,
-		Disabled:    len(options) == 1,
-	}
+	return buildSelectMenu(config, stageID, "Stage", selected, entries)
 }
 
 func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
@@ -254,74 +241,38 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Weather.String())
 	}
 
-	var options []discordgo.SelectMenuOption
-	switch {
-	case config.Location == nil:
-		dryID := strings.ToLower(weather.DRY.String())
-		wetID := strings.ToLower(weather.WET.String())
-		options = []discordgo.SelectMenuOption{
-			randomOption("Weather"),
-			{
-				Label:   weather.DRY.String(),
-				Value:   dryID,
-				Emoji:   &discordgo.ComponentEmoji{Name: weather.DRY.Emoji()},
-				Default: dryID == selected,
-			},
-			{
-				Label:   weather.WET.String(),
-				Value:   strings.ToLower(weather.WET.String()),
-				Emoji:   &discordgo.ComponentEmoji{Name: weather.WET.Emoji()},
-				Default: wetID == selected,
-			},
-		}
+	weathers := []weather.Model{weather.DRY, weather.WET}
+	if config.Location != nil {
+		weathers = config.Location.Weather()
+	}
 
-		if selected != dryID && selected != wetID {
-			options[0].Default = true
-		}
-
-	case len(config.Location.Weather()) == 1:
-		options = []discordgo.SelectMenuOption{
-			{
-				Label:   config.Location.Weather()[0].String(),
-				Value:   strings.ToLower(config.Location.Weather()[0].String()),
-				Emoji:   &discordgo.ComponentEmoji{Name: config.Location.Weather()[0].Emoji()},
+	// A location with a single possible weather leaves nothing to choose.
+	if config.Location != nil && len(weathers) == 1 {
+		only := weathers[0]
+		return discordgo.SelectMenu{
+			Placeholder: "Weather",
+			MenuType:    discordgo.StringSelectMenu,
+			CustomID:    buildComponentID(config, weatherID),
+			Options: []discordgo.SelectMenuOption{{
+				Label:   only.String(),
+				Value:   strings.ToLower(only.String()),
+				Emoji:   &discordgo.ComponentEmoji{Name: only.Emoji()},
 				Default: true,
-			},
-		}
-
-	default:
-		options = []discordgo.SelectMenuOption{
-			randomOption("Weather"),
-		}
-
-		hasDefault := false
-
-		for _, weather := range config.Location.Weather() {
-			weatherID := strings.ToLower(weather.String())
-			if weatherID == selected {
-				hasDefault = true
-			}
-
-			options = append(options, discordgo.SelectMenuOption{
-				Label:   weather.String(),
-				Value:   weatherID,
-				Emoji:   &discordgo.ComponentEmoji{Name: weather.Emoji()},
-				Default: weatherID == selected,
-			})
-		}
-
-		if !hasDefault {
-			options[0].Default = true
+			}},
+			Disabled: true,
 		}
 	}
 
-	return discordgo.SelectMenu{
-		Placeholder: "Weather",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), weatherID}, idFieldDelimiter),
-		Options:     options,
-		Disabled:    len(options) == 1,
+	entries := make([]menuEntry, 0, len(weathers))
+	for _, w := range weathers {
+		entries = append(entries, menuEntry{
+			label: w.String(),
+			value: strings.ToLower(w.String()),
+			emoji: w.Emoji(),
+		})
 	}
+
+	return buildSelectMenu(config, weatherID, "Weather", selected, entries)
 }
 
 func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
@@ -330,36 +281,16 @@ func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Drivetrain.String())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Drivetrain"),
-	}
-
-	hasDefault := false
-
-	for _, drivetrain := range drivetrain.List(config.Game) {
-		drivetrainID := strings.ToLower(drivetrain.String())
-		if drivetrainID == selected {
-			hasDefault = true
-		}
-
-		options = append(options, discordgo.SelectMenuOption{
-			Label:   drivetrain.String(),
-			Value:   drivetrainID,
-			Emoji:   &discordgo.ComponentEmoji{Name: drivetrain.Emoji()},
-			Default: drivetrainID == selected,
+	entries := make([]menuEntry, 0, len(drivetrain.List(config.Game)))
+	for _, dt := range drivetrain.List(config.Game) {
+		entries = append(entries, menuEntry{
+			label: dt.String(),
+			value: strings.ToLower(dt.String()),
+			emoji: dt.Emoji(),
 		})
 	}
 
-	if !hasDefault {
-		options[0].Default = true
-	}
-
-	return discordgo.SelectMenu{
-		Placeholder: "Drivetrain",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), drivetrainID}, idFieldDelimiter),
-		Options:     options,
-	}
+	return buildSelectMenu(config, drivetrainID, "Drivetrain", selected, entries)
 }
 
 func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
@@ -368,51 +299,20 @@ func buildClassMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Class.String())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Class"),
-	}
-
-	hasDefault := false
-
+	classes := class.List(config.Game)
 	if config.Drivetrain != nil {
-		for _, class := range class.WithDrivetrain(*config.Drivetrain, config.Game) {
-			classID := strings.ToLower(class.String())
-			if classID == selected {
-				hasDefault = true
-			}
-
-			options = append(options, discordgo.SelectMenuOption{
-				Label:   class.String(),
-				Value:   classID,
-				Default: classID == selected,
-			})
-		}
-	} else {
-		for _, class := range class.List(config.Game) {
-			classID := strings.ToLower(class.String())
-			if classID == selected {
-				hasDefault = true
-			}
-
-			options = append(options, discordgo.SelectMenuOption{
-				Label:   class.String(),
-				Value:   classID,
-				Default: classID == selected,
-			})
-		}
+		classes = class.WithDrivetrain(*config.Drivetrain, config.Game)
 	}
 
-	if !hasDefault {
-		options[0].Default = true
+	entries := make([]menuEntry, 0, len(classes))
+	for _, c := range classes {
+		entries = append(entries, menuEntry{
+			label: c.String(),
+			value: strings.ToLower(c.String()),
+		})
 	}
 
-	return discordgo.SelectMenu{
-		Placeholder: "Class",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), classID}, idFieldDelimiter),
-		Options:     options,
-		Disabled:    len(options) == 1,
-	}
+	return buildSelectMenu(config, classID, "Class", selected, entries)
 }
 
 func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
@@ -421,38 +321,17 @@ func buildCarMenu(config challenge.Config) discordgo.SelectMenu {
 		selected = strings.ToLower(config.Car.Name())
 	}
 
-	options := []discordgo.SelectMenuOption{
-		randomOption("Car"),
-	}
-
-	hasDefault := false
-
+	var entries []menuEntry
 	if config.Class != nil {
-		for _, car := range car.InClass(*config.Class, config.Game) {
-			carID := strings.ToLower(car.Name())
-			if carID == selected {
-				hasDefault = true
-			}
-
-			options = append(options, discordgo.SelectMenuOption{
-				Label:   car.Name(),
-				Value:   carID,
-				Default: carID == selected,
+		for _, c := range car.InClass(*config.Class, config.Game) {
+			entries = append(entries, menuEntry{
+				label: c.Name(),
+				value: strings.ToLower(c.Name()),
 			})
 		}
 	}
 
-	if !hasDefault {
-		options[0].Default = true
-	}
-
-	return discordgo.SelectMenu{
-		Placeholder: "Car",
-		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    strings.Join([]string{ChallengeID, gameIDString(config), carID}, idFieldDelimiter),
-		Options:     options,
-		Disabled:    len(options) == 1,
-	}
+	return buildSelectMenu(config, carID, "Car", selected, entries)
 }
 
 func configFromInteraction(sessions SessionStore, interaction *discordgo.InteractionCreate) (challenge.Config, error) {
