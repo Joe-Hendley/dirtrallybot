@@ -51,11 +51,12 @@ single ~475-line switch. Adding a game means editing every package.
 - [ ] Reduce the per-package `switch g` dispatch to generic registry lookups
 - [ ] Finish the WRC car catalogue and remove `// TODO - this`
       (`internal/model/car/car.go`)
-- [ ] Consolidate the three parallel game-to-string mappings — `gameIDString`,
-      `gameFromID`, and `game.Model.String()` — into one owned by the `game`
-      package
-      (`internal/bot/handler/challenge/challengebuilder.go`,
-      `internal/model/game/game.go`)
+- [x] Consolidate the game slug mapping. `game.Model.ID()` and `game.FromID()`
+      now own the `dr2`/`wrc` <-> `Model` mapping; `gameIDString` and `gameFromID`
+      in the handler are gone, and a test pins the handler's `DR2ID`/`WRCID`
+      fragments to the game package
+      (`internal/model/game/game.go`,
+      `internal/bot/handler/challenge/challengebuilder.go`)
 
 ## 3. Hexagonal boundaries
 

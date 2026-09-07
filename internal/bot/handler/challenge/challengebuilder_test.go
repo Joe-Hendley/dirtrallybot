@@ -33,6 +33,13 @@ func componentCustomID(gameID, component string) string {
 	return strings.Join([]string{ChallengeID, gameID, component}, idFieldDelimiter)
 }
 
+// The handler's game ID fragments must stay in step with the game package, which
+// owns the slug <-> Model mapping.
+func TestGameIDFragmentsMatchGamePackage(t *testing.T) {
+	assert.Equal(t, DR2ID, game.DR2.ID())
+	assert.Equal(t, WRCID, game.WRC.ID())
+}
+
 func componentInteraction(customID string, values []string, builderID string) *discordgo.InteractionCreate {
 	return &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{

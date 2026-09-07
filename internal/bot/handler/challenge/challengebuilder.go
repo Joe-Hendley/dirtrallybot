@@ -37,16 +37,6 @@ const (
 	SubmitCarID  = "submit2"
 )
 
-func gameIDString(config challenge.Config) string {
-	switch config.Game {
-	case game.DR2:
-		return "dr2"
-	case game.WRC:
-		return "wrc"
-	}
-	return ""
-}
-
 func buildChallengeLocationMessageComponents(config challenge.Config) []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
@@ -75,7 +65,7 @@ func buildChallengeLocationMessageComponents(config challenge.Config) []discordg
 					Label:    "Submit Stage",
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
-					CustomID: strings.Join([]string{ChallengeID, gameIDString(config), SubmitLocationAndStageID}, idFieldDelimiter),
+					CustomID: strings.Join([]string{ChallengeID, config.Game.ID(), SubmitLocationAndStageID}, idFieldDelimiter),
 				},
 			},
 		},
@@ -105,7 +95,7 @@ func buildChallengeCarMessageComponents(config challenge.Config) []discordgo.Mes
 					Label:    "Submit",
 					Style:    discordgo.PrimaryButton,
 					Disabled: false,
-					CustomID: strings.Join([]string{ChallengeID, gameIDString(config), SubmitCarID}, idFieldDelimiter),
+					CustomID: strings.Join([]string{ChallengeID, config.Game.ID(), SubmitCarID}, idFieldDelimiter),
 				},
 			},
 		},
@@ -166,7 +156,7 @@ func buildSelectMenu(config challenge.Config, component, category, selectedValue
 }
 
 func buildComponentID(config challenge.Config, component string) string {
-	return strings.Join([]string{ChallengeID, gameIDString(config), component}, idFieldDelimiter)
+	return strings.Join([]string{ChallengeID, config.Game.ID(), component}, idFieldDelimiter)
 }
 
 func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
@@ -341,7 +331,7 @@ func configFromInteraction(sessions SessionStore, interaction *discordgo.Interac
 		return challenge.Config{}, fmt.Errorf("unexpected customID %s", customID)
 	}
 
-	whichGame := gameFromID(fields[gameIndex])
+	whichGame := game.FromID(fields[gameIndex])
 	if whichGame == game.NotSet {
 		return challenge.Config{}, fmt.Errorf("invalid game from customID %s", customID)
 	}
@@ -387,16 +377,6 @@ func applyComponent(config challenge.Config, component, value string) challenge.
 		return applyCar(config, value)
 	}
 	return config
-}
-
-func gameFromID(gameID string) game.Model {
-	switch gameID {
-	case DR2ID:
-		return game.DR2
-	case WRCID:
-		return game.WRC
-	}
-	return game.NotSet
 }
 
 func applyLocation(config challenge.Config, value string) challenge.Config {
