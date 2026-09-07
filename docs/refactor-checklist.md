@@ -70,10 +70,12 @@ single ~475-line switch. Adding a game meant editing every package.
       Affects `challenge.Model.FancyString`, `Config.FancyStageString`,
       `Config.FancyCarString`, and the `FancyString`/`FancyString`-style methods
       on `car`, `stage`, `drivetrain`
-- [ ] Replace `config`'s `init()` and `os.Exit(1)` with an explicit
-      `config.Load() (Config, error)` called from `main`, so importers and tests
-      no longer require a `.env` file
-      (`internal/config/config.go`)
+- [x] Replace `config`'s `init()` and `os.Exit(1)` with an explicit
+      `config.Load() (Config, error)` called from `main`. Importing the package
+      no longer has a side effect; a missing `.env` is a returned error, not a
+      process exit. Package-level mutable `var`s and the dead `NOTSET` defaults
+      are gone
+      (`internal/config/config.go`, `cmd/main.go`)
 - [ ] Make command registration and cleanup return errors instead of calling
       `os.Exit(1)` from library code; `bot.New` should not be able to kill the
       process

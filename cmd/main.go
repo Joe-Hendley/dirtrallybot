@@ -14,8 +14,14 @@ import (
 )
 
 func main() {
-	cfg := config.New()
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("loading config", "err", err)
+		os.Exit(1)
+	}
+
 	slog.Info("starting with config", "store", cfg.Store)
+
 	store, err := store.New(cfg)
 	if err != nil {
 		slog.Error("initialising store:", "err", err)

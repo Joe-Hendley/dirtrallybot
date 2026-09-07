@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -15,27 +14,7 @@ const (
 	BOLT   StoreType = "bolt"
 )
 
-const (
-	DEFAULTAPP        = "NOTSET"
-	DEFAULTTESTSERVER = "NOTSET"
-	DEFAULTTOKEN      = "NOTSET"
-	DEFAULTSTORE      = BOLT
-)
-
-var (
-	app        string    = DEFAULTAPP
-	token      string    = DEFAULTTOKEN
-	store      StoreType = DEFAULTSTORE
-	testServer string    = DEFAULTTESTSERVER
-)
-
-func init() {
-	err := loadEnv()
-	if err != nil {
-		slog.Error("loading env file", "err", err)
-		os.Exit(1)
-	}
-}
+const defaultStore = BOLT
 
 type Config struct {
 	App          string
@@ -44,23 +23,18 @@ type Config struct {
 	TestServerID string
 }
 
-func New() Config {
+// Load reads configuration from a .env file in the working directory, with the
+// process environment taking precedence. It is an error for the .env file to be
+// missing.
+func Load() (Config, error) {
+	if err := godotenv.Load(); err != nil {
+		return Config{}, fmt.Errorf("loading .env file: %w", err)
+	}
+
 	return Config{
-		App:          app,
-		Token:        token,
-		Store:        store,
-		TestServerID: testServer,
-	}
-}
-
-func loadEnv() error {
-	err := godotenv.Load()
-	if err != nil {
-		return fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	token = os.Getenv("token")
-	app = os.Getenv("app")
-	testServer = os.Getenv("testserver")
-	return nil
+		App:          os.Getenv("app"),
+		Token:        os.Getenv("token"),
+		Store:        defaultStore,
+		TestServerID: os.Getenv("testserver"),
+	}, nil
 }
