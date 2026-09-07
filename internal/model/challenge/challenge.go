@@ -129,14 +129,7 @@ func (m *Model) TopThree() []Completion {
 	}
 
 	sorted := make([]Completion, len(m.completions))
-	//lint:ignore S1001 copy doesn't work on unexported struct fields
-	for i := range m.completions { //nolint:gosimple // copy doesn't work on unexported struct fields
-		sorted[i] = m.completions[i]
-	}
-
-	// go-staticcheck & golangci-lint fighting it out? sheesh
-	// TODO - sort out this linter nonsense, probably refactor the above
-	// could sort a list of indices instead?
+	copy(sorted, m.completions)
 
 	slices.SortFunc(sorted, func(a, b Completion) int { return int(a.duration - b.duration) })
 

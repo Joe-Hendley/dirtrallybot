@@ -30,7 +30,7 @@ const (
 func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	customIDParts := []string{SubmitCompletionPrefix, "", ""}
 	customIDParts[challengeIDIndex] = interaction.Message.ID
-	customIDParts[userIDIndex] = interaction.Interaction.Member.User.ID
+	customIDParts[userIDIndex] = interaction.Member.User.ID
 
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
