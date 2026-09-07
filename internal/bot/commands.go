@@ -1,74 +1,71 @@
 package bot
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	commands = []*discordgo.ApplicationCommand{
-		{
-			Name:        challenge.NewDR2ChallengeID,
-			Description: "Generate a new Dirt Rally 2 challenge with custom settings",
-		},
-		{
-			Name:        challenge.NewWRCChallengeID,
-			Description: "Generate a new WRC challenge with custom settings",
-		},
-	}
-	cmdIDs map[string]string
-)
-
-func CreateCommands(config config.Config, session *discordgo.Session) {
-
-	cmdIDs = make(map[string]string, len(commands))
-
-	for _, cmd := range commands {
-		rcmd, err := session.ApplicationCommandCreate(config.App, "", cmd)
-		if err != nil {
-			slog.Error("creating slash command", "cmd", cmd.Name, "err", err)
-			os.Exit(1)
-		}
-
-		slog.Debug("registered command", "cmd", rcmd.Name)
-
-		cmdIDs[rcmd.ID] = rcmd.Name
-	}
+var commands = []*discordgo.ApplicationCommand{
+	{
+		Name:        challenge.NewDR2ChallengeID,
+		Description: "Generate a new Dirt Rally 2 challenge with custom settings",
+	},
+	{
+		Name:        challenge.NewWRCChallengeID,
+		Description: "Generate a new WRC challenge with custom settings",
+	},
 }
 
-func CleanupGuildCommands(config config.Config, session *discordgo.Session) {
-	for _, guild := range session.State.Guilds {
-		guildID := guild.ID
-		registeredCommands, err := session.ApplicationCommands(session.State.User.ID, guildID)
+func createCommands(cfg config.Config, session *discordgo.Session) error {
+	for _, cmd := range commands {
+		registered, err := session.ApplicationCommandCreate(cfg.App, "", cmd)
 		if err != nil {
-			slog.Error("fetching registered slash commands", "err", err)
-			os.Exit(1)
+			return fmt.Errorf("creating slash command %s: %w", cmd.Name, err)
 		}
 
-		for _, cmd := range registeredCommands {
-			err := session.ApplicationCommandDelete(session.State.User.ID, guildID, cmd.ID)
-			if err != nil {
-				slog.Error("deleting slash command", "cmd", cmd.Name, "err", err)
+		slog.Debug("registered command", "cmd", registered.Name)
+	}
+
+	return nil
+}
+
+func cleanupGuildCommands(session *discordgo.Session) error {
+	var errs []error
+
+	for _, guild := range session.State.Guilds {
+		registered, err := session.ApplicationCommands(session.State.User.ID, guild.ID)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("fetching commands for guild %s: %w", guild.ID, err))
+			continue
+		}
+
+		for _, cmd := range registered {
+			if err := session.ApplicationCommandDelete(session.State.User.ID, guild.ID, cmd.ID); err != nil {
+				errs = append(errs, fmt.Errorf("deleting guild command %s: %w", cmd.Name, err))
 			}
 		}
 	}
+
+	return errors.Join(errs...)
 }
 
-func CleanupGlobalCommands(config config.Config, session *discordgo.Session) {
-	registeredCommands, err := session.ApplicationCommands(session.State.User.ID, "")
+func cleanupGlobalCommands(session *discordgo.Session) error {
+	registered, err := session.ApplicationCommands(session.State.User.ID, "")
 	if err != nil {
-		slog.Error("fetching registered slash commands", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("fetching global commands: %w", err)
 	}
 
-	for _, cmd := range registeredCommands {
-		err := session.ApplicationCommandDelete(session.State.User.ID, "", cmd.ID)
-		if err != nil {
-			slog.Error("deleting slash command", "cmd", cmd.Name, "err", err)
+	var errs []error
+	for _, cmd := range registered {
+		if err := session.ApplicationCommandDelete(session.State.User.ID, "", cmd.ID); err != nil {
+			errs = append(errs, fmt.Errorf("deleting global command %s: %w", cmd.Name, err))
 		}
 	}
+
+	return errors.Join(errs...)
 }

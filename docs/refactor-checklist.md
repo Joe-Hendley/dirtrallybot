@@ -76,10 +76,12 @@ single ~475-line switch. Adding a game meant editing every package.
       process exit. Package-level mutable `var`s and the dead `NOTSET` defaults
       are gone
       (`internal/config/config.go`, `cmd/main.go`)
-- [ ] Make command registration and cleanup return errors instead of calling
-      `os.Exit(1)` from library code; `bot.New` should not be able to kill the
-      process
-      (`internal/bot/commands.go`, `internal/bot/bot.go`)
+- [x] Make command registration and cleanup return errors instead of calling
+      `os.Exit(1)` from library code. `createCommands` / `cleanupGuildCommands` /
+      `cleanupGlobalCommands` are now unexported, return errors (cleanup joins
+      them), and `bot.New` propagates the failure. Dead `cmdIDs` map removed;
+      `bot.cfg` is now populated (see §5)
+      (`internal/bot/commands.go`, `internal/bot/bot.go`, `cmd/main.go`)
 - [ ] Rename the `internal/model` package (it holds only the store port) to
       something like `internal/store/port`, or fold the interface into
       `internal/store`; reduce the number of types named `Model` and drop the
@@ -120,8 +122,9 @@ single ~475-line switch. Adding a game meant editing every package.
 - [ ] WRC challenges use the DR2 randomiser — `DR2Randomiser` is the only one
       wired in
       (`internal/bot/handler/challenge/challenge.go`)
-- [ ] `bot.New` never sets the `cfg` field, so `Shutdown` and the
-      `!cars` / `!stages` test-server gate run against a zero `Config`
+- [x] `bot.New` never sets the `cfg` field, so `Shutdown` and the
+      `!cars` / `!stages` test-server gate run against a zero `Config`. Fixed
+      alongside §3 (`bot.New` now sets `cfg`; cleanup no longer needs it)
       (`internal/bot/bot.go`)
 - [ ] `timestamp.Format` is not the inverse of `Parse`: milliseconds use `%d`
       (5ms renders as `.5`, not `.005`) and minutes are space-padded via `%2.f`.

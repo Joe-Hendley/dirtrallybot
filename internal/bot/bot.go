@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -22,6 +24,7 @@ type bot struct {
 func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot, error) {
 
 	bot := &bot{
+		cfg:      cfg,
 		session:  session,
 		store:    store,
 		sessions: buildersession.New(),
@@ -31,16 +34,20 @@ func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot
 	session.AddHandler(bot.HandleMessageCreate)
 	session.AddHandler(bot.HandleInteractionCreate)
 
-	CreateCommands(cfg, session)
+	if err := createCommands(cfg, session); err != nil {
+		return nil, fmt.Errorf("registering commands: %w", err)
+	}
 
 	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
 
 	return bot, nil
 }
 
-func (bot *bot) Shutdown() {
-	CleanupGuildCommands(bot.cfg, bot.session)
-	CleanupGlobalCommands(bot.cfg, bot.session)
+func (bot *bot) Shutdown() error {
+	return errors.Join(
+		cleanupGuildCommands(bot.session),
+		cleanupGlobalCommands(bot.session),
+	)
 }
 
 func (bot *bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {

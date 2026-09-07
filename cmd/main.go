@@ -41,7 +41,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	defer rallyBot.Shutdown()
+	defer func() {
+		if err := rallyBot.Shutdown(); err != nil {
+			slog.Error("shutting down", "err", err)
+		}
+	}()
 
 	err = session.Open()
 	if err != nil {
