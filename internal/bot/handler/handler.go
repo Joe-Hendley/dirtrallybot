@@ -16,10 +16,8 @@ func ApplicationCommand(session discord.Session, interaction *discordgo.Interact
 	}
 
 	switch interaction.ApplicationCommandData().Name {
-	case challenge.NewDR2ChallengeID:
-		challenge.HandleNewDR2Challenge(session, interaction)
-	case challenge.NewWRCChallengeID:
-		challenge.HandleNewWRCChallenge(session, interaction)
+	case challenge.NewDR2ChallengeID, challenge.NewWRCChallengeID:
+		challenge.HandleNewChallenge(session, interaction)
 	}
 }
 

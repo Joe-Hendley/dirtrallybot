@@ -31,8 +31,9 @@ break state reconstruction, and the `-` delimiter is never escaped.
       (`random` option, option loop, `hasDefault` fallback) shared by
       `buildLocationsMenu`, `buildDistanceMenu`, `buildStageMenu`,
       `buildWeatherMenu`, `buildDriveTrainMenu`, `buildClassMenu`, `buildCarMenu`
-- [ ] Merge `HandleNewDR2Challenge` and `HandleNewWRCChallenge`, which differ
-      only by the game constant
+- [x] Merge `HandleNewDR2Challenge` and `HandleNewWRCChallenge` into
+      `HandleNewChallenge`, which derives the game from the command name. Fixes
+      the WRC builder header, which read "Dirt Rally 2"
       (`internal/bot/handler/challenge/challenge.go`)
 - [x] Delete the `// TODO: rewrite the entire custom ID system` comment once done
       (`internal/bot/handler/challenge/challengebuilder.go`)

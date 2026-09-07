@@ -62,36 +62,43 @@ var (
 	DR2Randomiser = randomiser.NewSimple(game.DR2)
 )
 
-func HandleNewDR2Challenge(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+// HandleNewChallenge opens the challenge builder for whichever game the slash
+// command names.
+func HandleNewChallenge(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	var g game.Model
+	switch interaction.ApplicationCommandData().Name {
+	case NewDR2ChallengeID:
+		g = game.DR2
+	case NewWRCChallengeID:
+		g = game.WRC
+	default:
+		slog.Error("unknown new challenge command", "name", interaction.ApplicationCommandData().Name)
+		return
+	}
+
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			CustomID:   InitialDR2ChallengeResponseID,
-			Content:    fmt.Sprintf(baseMessage, game.DR2.String()),
+			CustomID:   initialChallengeResponseID(g),
+			Content:    fmt.Sprintf(baseMessage, g.String()),
 			Flags:      discordgo.MessageFlagsEphemeral,
-			Components: buildChallengeLocationMessageComponents(challenge.Config{Game: game.DR2}),
+			Components: buildChallengeLocationMessageComponents(challenge.Config{Game: g}),
 		},
 	})
 
 	if err != nil {
-		slog.Error("Create Custom DR2 Challenge Initial Message", "err", err)
+		slog.Error("creating challenge builder message", "game", g.String(), "err", err)
 	}
 }
 
-func HandleNewWRCChallenge(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
-	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			CustomID:   InitialWRCChallengeResponseID,
-			Content:    fmt.Sprintf(baseMessage, game.DR2.String()),
-			Flags:      discordgo.MessageFlagsEphemeral,
-			Components: buildChallengeLocationMessageComponents(challenge.Config{Game: game.WRC}),
-		},
-	})
-
-	if err != nil {
-		slog.Error("Create Custom DR2 Challenge Initial Message", "err", err)
+func initialChallengeResponseID(g game.Model) string {
+	switch g {
+	case game.WRC:
+		return InitialWRCChallengeResponseID
+	case game.DR2:
+		return InitialDR2ChallengeResponseID
 	}
+	return ""
 }
 
 // SessionStore holds the in-progress Config for an open challenge builder,
