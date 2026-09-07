@@ -15,7 +15,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type bot struct {
+type Bot struct {
 	ctx      context.Context
 	cfg      config.Config
 	session  *discordgo.Session
@@ -26,8 +26,8 @@ type bot struct {
 // New wires up the bot and registers its slash commands. ctx bounds the lifetime
 // of work started from interaction handlers; cancelling it unwinds in-flight
 // store operations at shutdown.
-func New(ctx context.Context, cfg config.Config, store port.Store, session *discordgo.Session) (*bot, error) {
-	bot := &bot{
+func New(ctx context.Context, cfg config.Config, store port.Store, session *discordgo.Session) (*Bot, error) {
+	bot := &Bot{
 		ctx:      ctx,
 		cfg:      cfg,
 		session:  session,
@@ -48,18 +48,18 @@ func New(ctx context.Context, cfg config.Config, store port.Store, session *disc
 	return bot, nil
 }
 
-func (bot *bot) Shutdown() error {
+func (bot *Bot) Shutdown() error {
 	return errors.Join(
 		cleanupGuildCommands(bot.session),
 		cleanupGlobalCommands(bot.session),
 	)
 }
 
-func (bot *bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
+func (bot *Bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
 	slog.Info("Bot is ready")
 }
 
-func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
+func (bot *Bot) HandleMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	if message.Author.ID == session.State.User.ID {
 		return
 	}
@@ -86,7 +86,7 @@ func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discord
 	}
 }
 
-func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func (bot *Bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	switch interaction.Type {
 	case discordgo.InteractionApplicationCommand:
 		handler.ApplicationCommand(session, interaction)

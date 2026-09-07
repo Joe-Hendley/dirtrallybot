@@ -169,13 +169,15 @@ convey that.
 
 ## 7. Project layout and tooling
 
-- [ ] Move `cmd/main.go` (`package cmd`) to `cmd/dirtrallybot/main.go` so the
-      binary is named `dirtrallybot`
-- [ ] Fix the `build:` target indentation in the `Makefile` (spaces, not a tab)
-- [ ] `bot.New` returns an unexported `*bot` from an exported function
+- [x] Moved `cmd/main.go` to `cmd/dirtrallybot/main.go` so the binary is named
+      `dirtrallybot`; `make run` targets it
+- [x] Fixed the `build:` target indentation in the `Makefile` (was spaces)
+- [x] `bot` type exported to `Bot`, so `bot.New` no longer returns an unexported
+      type from an exported function
       (`internal/bot/bot.go`)
-- [ ] Expand the README; consider a conventional `DISCORD_TOKEN`-style env key
-      rather than lowercase `token`
+- [x] README expanded to cover the commands, the `.env` keys and the layout.
+      The env keys are left as `token`/`app`/`testserver` to avoid breaking
+      existing deployments; documented rather than renamed
 
 ## 8. Test coverage
 
