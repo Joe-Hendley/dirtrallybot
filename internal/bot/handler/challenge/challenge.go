@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
@@ -159,7 +160,7 @@ func updateCarSelectMessage(sessions SessionStore, session discord.InteractionRe
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content:    fmt.Sprintf(baseMessage, config.Game.String()) + "\n" + config.FancyStageString(),
+			Content:    fmt.Sprintf(baseMessage, config.Game.String()) + "\n" + render.StageConfig(config),
 			Flags:      discordgo.MessageFlagsEphemeral,
 			Components: buildChallengeCarMessageComponents(config),
 		},
@@ -182,7 +183,7 @@ func updateSelectMessageAndCreateChallenge(ctx context.Context, sessions Session
 	err = session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf(baseMessage, config.Game.String()) + "\n" + config.FancyStageString() + "\n" + config.FancyCarString(),
+			Content: fmt.Sprintf(baseMessage, config.Game.String()) + "\n" + render.StageConfig(config) + "\n" + render.CarConfig(config),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
@@ -223,7 +224,7 @@ func updateMessageWithError(session discord.InteractionResponder, interaction *d
 
 func sendChallengeMessage(session discord.ChannelMessageSender, channelID string, challenge challenge.Model) (string, error) {
 	msg := &discordgo.MessageSend{
-		Content:    challenge.FancyString() + "\n",
+		Content:    render.Challenge(challenge) + "\n",
 		Components: getChallengeButtons(),
 	}
 

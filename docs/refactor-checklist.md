@@ -65,11 +65,15 @@ single ~475-line switch. Adding a game meant editing every package.
 
 ## 3. Hexagonal boundaries
 
-- [ ] Move Discord presentation (emoji, Markdown) out of the domain: have the
-      domain expose a neutral view model and render it in a Discord adapter.
-      Affects `challenge.Model.FancyString`, `Config.FancyStageString`,
-      `Config.FancyCarString`, and the `FancyString`/`FancyString`-style methods
-      on `car`, `stage`, `drivetrain`
+- [x] Move Discord presentation (emoji, flags, Markdown) out of the domain into
+      a new `internal/bot/render` package. Gone from the model: every
+      `FancyString`, `car.Emoji`, `stage.Distance.Emoji`, `drivetrain.Emoji`,
+      `weather.Emoji`, `location.Flag`, `location.WeatherStrings` and the
+      `challenge` package's emoji/`RandomFancyString` vars plus the unused
+      `Config.String`. Plain-text `String()` / `DetailedString()` / `Name()`
+      stay - they're identifiers, not decoration. The vestigial `\x1f`
+      `EmojiDelimiter` (nothing parsed it after §1) is dropped from the output
+      (`internal/bot/render/`, `internal/model/*`, the handlers, `debug`)
 - [x] Replace `config`'s `init()` and `os.Exit(1)` with an explicit
       `config.Load() (Config, error)` called from `main`. Importing the package
       no longer has a side effect; a missing `.env` is a returned error, not a

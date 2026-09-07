@@ -3,6 +3,7 @@ package debug
 import (
 	"log/slog"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
@@ -18,7 +19,7 @@ func HandleCars(s *discordgo.Session, m *discordgo.MessageCreate) {
 	game := game.DR2
 	for _, class := range class.List(game) {
 		for _, car := range car.InClass(class, game) {
-			buf := car.FancyString() + "\n"
+			buf := render.Car(car) + "\n"
 
 			if len(msg)+len(buf) > 2000 {
 				_, err := s.ChannelMessageSend(m.ChannelID, msg)
@@ -44,7 +45,7 @@ func HandleStages(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg := ""
 	for _, location := range location.List(game.DR2) {
 		for _, stage := range stage.AtLocation(location) {
-			buf := stage.FancyString() + "\n"
+			buf := render.Stage(stage) + "\n"
 
 			if len(msg)+len(buf) > 2000 {
 				_, err := s.ChannelMessageSend(m.ChannelID, msg)

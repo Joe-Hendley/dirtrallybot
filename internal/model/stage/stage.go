@@ -1,8 +1,6 @@
 package stage
 
 import (
-	"fmt"
-
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 )
 
@@ -23,20 +21,6 @@ func (d Distance) String() string {
 		return "8 Sector"
 	case ReallyLong:
 		return "16 Sector"
-	case Unknown:
-		return "❓"
-	}
-	return "invalid distance"
-}
-
-func (d Distance) Emoji() string {
-	switch d {
-	case Short:
-		return "4️⃣"
-	case Long:
-		return "8️⃣"
-	case ReallyLong:
-		return "♾️"
 	case Unknown:
 		return "❓"
 	}
@@ -67,10 +51,6 @@ func (m Model) Distance() Distance {
 
 func (m Model) String() string {
 	return m.location.String() + ": " + m.name
-}
-
-func (m Model) FancyString() string {
-	return fmt.Sprintf("%s **%s » %s**", m.location.Flag(), m.location.String(), m.name)
 }
 
 func (m Model) Location() location.Model {

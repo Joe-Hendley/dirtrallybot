@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
@@ -104,7 +105,7 @@ func buildChallengeCarMessageComponents(config challenge.Config) []discordgo.Mes
 
 func randomOption(category string) discordgo.SelectMenuOption {
 	return discordgo.SelectMenuOption{
-		Label: "Random " + category, Value: RandomID, Emoji: &discordgo.ComponentEmoji{Name: challenge.RandomEmoji},
+		Label: "Random " + category, Value: RandomID, Emoji: &discordgo.ComponentEmoji{Name: render.RandomEmoji},
 	}
 }
 
@@ -170,7 +171,7 @@ func buildLocationsMenu(config challenge.Config) discordgo.SelectMenu {
 		entries = append(entries, menuEntry{
 			label:       loc.String(),
 			value:       strings.ToLower(loc.String()),
-			emoji:       loc.Flag(),
+			emoji:       render.Flag(loc),
 			description: loc.DetailedString(),
 		})
 	}
@@ -194,7 +195,7 @@ func buildDistanceMenu(config challenge.Config) discordgo.SelectMenu {
 		entries = append(entries, menuEntry{
 			label: distance.String(),
 			value: strings.ToLower(distance.String()),
-			emoji: distance.Emoji(),
+			emoji: render.DistanceEmoji(distance),
 		})
 	}
 
@@ -216,7 +217,7 @@ func buildStageMenu(config challenge.Config) discordgo.SelectMenu {
 			entries = append(entries, menuEntry{
 				label:       s.Name(),
 				value:       strings.ToLower(s.Name()),
-				emoji:       s.Distance().Emoji(),
+				emoji:       render.DistanceEmoji(s.Distance()),
 				description: s.String(),
 			})
 		}
@@ -246,7 +247,7 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 			Options: []discordgo.SelectMenuOption{{
 				Label:   only.String(),
 				Value:   strings.ToLower(only.String()),
-				Emoji:   &discordgo.ComponentEmoji{Name: only.Emoji()},
+				Emoji:   &discordgo.ComponentEmoji{Name: render.WeatherEmoji(only)},
 				Default: true,
 			}},
 			Disabled: true,
@@ -258,7 +259,7 @@ func buildWeatherMenu(config challenge.Config) discordgo.SelectMenu {
 		entries = append(entries, menuEntry{
 			label: w.String(),
 			value: strings.ToLower(w.String()),
-			emoji: w.Emoji(),
+			emoji: render.WeatherEmoji(w),
 		})
 	}
 
@@ -276,7 +277,7 @@ func buildDriveTrainMenu(config challenge.Config) discordgo.SelectMenu {
 		entries = append(entries, menuEntry{
 			label: dt.String(),
 			value: strings.ToLower(dt.String()),
-			emoji: dt.Emoji(),
+			emoji: render.DrivetrainEmoji(dt),
 		})
 	}
 

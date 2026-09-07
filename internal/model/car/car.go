@@ -1,13 +1,9 @@
 package car
 
 import (
-	"fmt"
-
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 )
-
-const Emoji = "🏎️"
 
 type Model struct {
 	name  string
@@ -31,10 +27,6 @@ func (m Model) String() string {
 
 func (m Model) Class() class.Model {
 	return m.class
-}
-
-func (m Model) FancyString() string {
-	return fmt.Sprintf("%s **%s » %s**", Emoji, m.class.String(), m.name)
 }
 
 var namesByGameClass = map[game.Model]map[class.Model][]string{

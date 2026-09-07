@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/timestamp"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
@@ -165,7 +166,7 @@ func updateTopThree(ctx context.Context, store port.Store, session discord.Sessi
 
 	topThreeString := strings.Join(lines, "\n")
 
-	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(challenge.FancyString() + "\n" + topThreeString)
+	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(render.Challenge(challenge) + "\n" + topThreeString)
 
 	_, err = session.ChannelMessageEditComplex(edited)
 	if err != nil {
