@@ -41,15 +41,20 @@ break state reconstruction, and the `-` delimiter is never escaped.
 
 ## 2. Game abstraction
 
-Every model package switches on `game.Model` into hardcoded twin functions
-(`listDR2`/`listWRC`, `inClassDR2`/`inClassWRC`, ...). `stage.AtLocation` is a
-single ~475-line switch. Adding a game means editing every package.
+Every model package switched on `game.Model` into hardcoded twin functions
+(`listDR2`/`listWRC`, `inClassDR2`/`inClassWRC`, ...). `stage.AtLocation` was a
+single ~475-line switch. Adding a game meant editing every package.
 
-- [ ] Move the catalogue data (locations, stages, classes, cars, drivetrains,
-      weather) out of Go source into embedded data files loaded via `//go:embed`
-      into a registry
-- [ ] Reduce the per-package `switch g` dispatch to generic registry lookups
-- [ ] Finish the WRC car catalogue and remove `// TODO - this`
+- [x] Replace the `switch g { xDR2 / xWRC }` twin-function dispatch with
+      package-level data tables: `location.byGame`, `stage.byLocation`,
+      `class.byGame`, `class.byGameDrivetrain`, `car.namesByGameClass`,
+      `drivetrain.byGame`. Lookups are one map access; adding a game is a data
+      edit. Catalogue-integrity tests added (every listed class has cars, every
+      listed location has stages). Moving the tables to embedded data files is
+      tracked separately in `docs/catalogue-data-migration.md`
+- [x] Finish the WRC car catalogue and remove `// TODO - this`. The data was in
+      fact complete for all 18 WRC classes; the stale TODO is gone and a test
+      now enforces completeness
       (`internal/model/car/car.go`)
 - [x] Consolidate the game slug mapping. `game.Model.ID()` and `game.FromID()`
       now own the `dr2`/`wrc` <-> `Model` mapping; `gameIDString` and `gameFromID`

@@ -1,6 +1,8 @@
 package location
 
 import (
+	"slices"
+
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 )
@@ -44,18 +46,8 @@ const (
 	IBE // rally iberia
 )
 
-func List(g game.Model) []Model {
-	switch g {
-	case game.DR2:
-		return listDR2()
-	case game.WRC:
-		return listWRC()
-	}
-	return []Model{}
-}
-
-func listDR2() []Model {
-	return []Model{
+var byGame = map[game.Model][]Model{
+	game.DR2: {
 		ARG,
 		AUS,
 		FIN,
@@ -69,11 +61,8 @@ func listDR2() []Model {
 		SWE,
 		USA,
 		WAL,
-	}
-}
-
-func listWRC() []Model {
-	return []Model{
+	},
+	game.WRC: {
 		MCO_WRC,
 		SWE_WRC,
 		MEX,
@@ -92,7 +81,11 @@ func listWRC() []Model {
 		UUU,
 		SCA,
 		IBE,
-	}
+	},
+}
+
+func List(g game.Model) []Model {
+	return slices.Clone(byGame[g])
 }
 
 func (m Model) String() string {
