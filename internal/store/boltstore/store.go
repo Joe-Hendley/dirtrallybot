@@ -2,6 +2,7 @@ package boltstore
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 
@@ -49,7 +50,11 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) PutChallenge(challengeID string, challenge challenge.Model) error {
+func (s *Store) PutChallenge(ctx context.Context, challengeID string, challenge challenge.Model) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	dto := dto.FromChallenge(challenge)
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
@@ -66,7 +71,11 @@ func (s *Store) PutChallenge(challengeID string, challenge challenge.Model) erro
 	return err
 }
 
-func (s *Store) GetChallenge(challengeID string) (challenge.Model, error) {
+func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge.Model, error) {
+	if err := ctx.Err(); err != nil {
+		return challenge.Model{}, err
+	}
+
 	dto := dto.Challenge{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -81,7 +90,11 @@ func (s *Store) GetChallenge(challengeID string) (challenge.Model, error) {
 	return dto.ToChallenge(), err
 }
 
-func (s *Store) DeleteChallenge(challengeID string) error {
+func (s *Store) DeleteChallenge(ctx context.Context, challengeID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte("challenges")).Delete([]byte(challengeID))
 	})
@@ -89,7 +102,11 @@ func (s *Store) DeleteChallenge(challengeID string) error {
 	return err
 }
 
-func (s *Store) RegisterCompletion(challengeID string, completion challenge.Completion) error {
+func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, completion challenge.Completion) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		buf := tx.Bucket([]byte("challenges")).Get([]byte(challengeID))
 		if buf == nil {

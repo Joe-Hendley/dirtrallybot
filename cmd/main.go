@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -14,6 +15,9 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	defer stop()
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("loading config", "err", err)
@@ -24,20 +28,19 @@ func main() {
 
 	store, err := store.New(cfg)
 	if err != nil {
-		slog.Error("initialising store:", "err", err)
+		slog.Error("initialising store", "err", err)
 		os.Exit(1)
 	}
 
 	session, err := discordgo.New("Bot " + cfg.Token)
-
 	if err != nil {
-		slog.Error("starting session: %w", "err", err)
+		slog.Error("creating session", "err", err)
 		os.Exit(1)
 	}
 
-	rallyBot, err := bot.New(cfg, store, session)
+	rallyBot, err := bot.New(ctx, cfg, store, session)
 	if err != nil {
-		slog.Error("starting bot:", "err", err)
+		slog.Error("starting bot", "err", err)
 		os.Exit(1)
 	}
 
@@ -47,22 +50,15 @@ func main() {
 		}
 	}()
 
-	err = session.Open()
-	if err != nil {
-		slog.Error("opening connection:", "err", err)
+	if err := session.Open(); err != nil {
+		slog.Error("opening connection", "err", err)
 		os.Exit(1)
 	}
-
-	slog.Info("Bot is running. Press CTL-C to exit.")
 	defer session.Close()
 
-	waitForInterrupt()
+	slog.Info("Bot is running. Press CTRL-C to exit.")
+
+	<-ctx.Done()
 	fmt.Println()
 	slog.Info("Bot shutting down")
-}
-
-func waitForInterrupt() {
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-done
 }

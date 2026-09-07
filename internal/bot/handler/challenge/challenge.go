@@ -1,6 +1,7 @@
 package challenge
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -109,7 +110,7 @@ type SessionStore interface {
 	Delete(builderID string)
 }
 
-func HandleChallengeBuilderInteraction(sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleChallengeBuilderInteraction(ctx context.Context, sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	split := strings.Split(interaction.MessageComponentData().CustomID, idFieldDelimiter)
 	lastField := split[len(split)-1]
 
@@ -119,7 +120,7 @@ func HandleChallengeBuilderInteraction(sessions SessionStore, store port.Store, 
 	case SubmitLocationAndStageID, drivetrainID, classID, carID:
 		updateCarSelectMessage(sessions, session, interaction)
 	case SubmitCarID:
-		updateSelectMessageAndCreateChallenge(sessions, store, session, interaction)
+		updateSelectMessageAndCreateChallenge(ctx, sessions, store, session, interaction)
 	}
 }
 
@@ -169,7 +170,7 @@ func updateCarSelectMessage(sessions SessionStore, session discord.InteractionRe
 	}
 }
 
-func updateSelectMessageAndCreateChallenge(sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func updateSelectMessageAndCreateChallenge(ctx context.Context, sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	config, err := configFromInteraction(sessions, interaction)
 
 	if err != nil {
@@ -198,7 +199,7 @@ func updateSelectMessageAndCreateChallenge(sessions SessionStore, store port.Sto
 		slog.Error("sending challenge message", "id", interaction.ID, "channel_id", interaction.ChannelID, "err", err)
 	}
 
-	err = store.PutChallenge(challengeID, challenge)
+	err = store.PutChallenge(ctx, challengeID, challenge)
 	if err != nil {
 		slog.Error("storing custom dr2 challenge", "err", err)
 	}

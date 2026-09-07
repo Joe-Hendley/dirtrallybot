@@ -1,6 +1,7 @@
 package memorystore
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -22,7 +23,11 @@ func New() *Store {
 	}
 }
 
-func (s *Store) PutChallenge(id string, challenge challenge.Model) error {
+func (s *Store) PutChallenge(ctx context.Context, id string, challenge challenge.Model) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -31,7 +36,11 @@ func (s *Store) PutChallenge(id string, challenge challenge.Model) error {
 	return nil
 }
 
-func (s *Store) GetChallenge(challengeID string) (c challenge.Model, err error) {
+func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge.Model, error) {
+	if err := ctx.Err(); err != nil {
+		return challenge.Model{}, err
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -39,10 +48,15 @@ func (s *Store) GetChallenge(challengeID string) (c challenge.Model, err error) 
 	if !ok {
 		return challenge.Model{}, fmt.Errorf("challenge %s not found", challengeID)
 	}
+
 	return got, nil
 }
 
-func (s *Store) DeleteChallenge(id string) error {
+func (s *Store) DeleteChallenge(ctx context.Context, id string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -51,18 +65,21 @@ func (s *Store) DeleteChallenge(id string) error {
 	return nil
 }
 
-func (s *Store) RegisterCompletion(challengeID string, completion challenge.Completion) error {
+func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, completion challenge.Completion) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	challenge, ok := s.challengeMap[challengeID]
+	stored, ok := s.challengeMap[challengeID]
 	if !ok {
-		return fmt.Errorf("challenge %s not found", challengeID) //fmt.Errorf("challenge id %s not found", challengeID)
+		return fmt.Errorf("challenge %s not found", challengeID)
 	}
 
-	challenge.RegisterCompletion(completion)
-
-	s.challengeMap[challengeID] = challenge
+	stored.RegisterCompletion(completion)
+	s.challengeMap[challengeID] = stored
 
 	return nil
 }

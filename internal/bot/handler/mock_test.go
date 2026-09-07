@@ -1,6 +1,8 @@
 package handler_test
 
 import (
+	"context"
+
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
@@ -45,25 +47,25 @@ type storeMock struct {
 }
 
 // DeleteChallenge implements port.Store.
-func (sm *storeMock) DeleteChallenge(challengeID string) error {
+func (sm *storeMock) DeleteChallenge(_ context.Context, challengeID string) error {
 	args := sm.Called(challengeID)
 	return args.Error(0)
 }
 
 // GetChallenge implements port.Store.
-func (sm *storeMock) GetChallenge(challengeID string) (challenge.Model, error) {
+func (sm *storeMock) GetChallenge(_ context.Context, challengeID string) (challenge.Model, error) {
 	args := sm.Called(challengeID)
 	return args.Get(0).(challenge.Model), args.Error(1)
 }
 
 // PutChallenge implements port.Store.
-func (sm *storeMock) PutChallenge(challengeID string, challenge challenge.Model) error {
+func (sm *storeMock) PutChallenge(_ context.Context, challengeID string, challenge challenge.Model) error {
 	args := sm.Called(challengeID)
 	return args.Error(0)
 }
 
 // RegisterCompletion implements port.Store.
-func (sm *storeMock) RegisterCompletion(challengeID string, completion challenge.Completion) error {
+func (sm *storeMock) RegisterCompletion(_ context.Context, challengeID string, completion challenge.Completion) error {
 	args := sm.Called(challengeID, completion)
 	return args.Error(0)
 }

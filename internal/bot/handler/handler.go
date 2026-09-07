@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
@@ -21,7 +22,7 @@ func ApplicationCommand(session discord.Session, interaction *discordgo.Interact
 	}
 }
 
-func InteractionMessageComponent(sessions challenge.SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func InteractionMessageComponent(ctx context.Context, sessions challenge.SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionMessageComponent {
 		return
 	}
@@ -32,13 +33,13 @@ func InteractionMessageComponent(sessions challenge.SessionStore, store port.Sto
 	case customID == challenge.DisplayCompletionModalID:
 		completion.HandleDisplayEntryModal(session, interaction)
 	case customID == challenge.DisplayTimesID:
-		completion.HandleDisplayTimes(store, session, interaction)
+		completion.HandleDisplayTimes(ctx, store, session, interaction)
 	case strings.HasPrefix(customID, challenge.ChallengeID):
-		challenge.HandleChallengeBuilderInteraction(sessions, store, session, interaction)
+		challenge.HandleChallengeBuilderInteraction(ctx, sessions, store, session, interaction)
 	}
 }
 
-func ModalSubmit(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func ModalSubmit(ctx context.Context, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
@@ -46,6 +47,6 @@ func ModalSubmit(store port.Store, session discord.Session, interaction *discord
 	data := interaction.ModalSubmitData()
 
 	if strings.HasPrefix(data.CustomID, completion.SubmitCompletionPrefix) {
-		completion.HandleSubmitModal(store, session, interaction)
+		completion.HandleSubmitModal(ctx, store, session, interaction)
 	}
 }

@@ -1,6 +1,7 @@
 package completion
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -61,7 +62,7 @@ func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *
 	}
 }
 
-func HandleSubmitModal(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
@@ -95,7 +96,7 @@ func HandleSubmitModal(store port.Store, session discord.Session, interaction *d
 	}
 
 	completion := challenge.NewCompletion(userID, parsed)
-	err = store.RegisterCompletion(challengeID, completion)
+	err = store.RegisterCompletion(ctx, challengeID, completion)
 
 	if err != nil {
 		slog.Error("submitting timestamp", "challenge-id", challengeID, "err", err)
@@ -126,7 +127,7 @@ func HandleSubmitModal(store port.Store, session discord.Session, interaction *d
 		log.Printf("error sending response to valid timestamp: %v\n", err)
 	}
 
-	updateTopThree(store, session, interaction.GuildID, interaction.ChannelID, challengeID)
+	updateTopThree(ctx, store, session, interaction.GuildID, interaction.ChannelID, challengeID)
 }
 
 func medal(place int) string {
@@ -142,9 +143,9 @@ func medal(place int) string {
 	}
 }
 
-func updateTopThree(store port.Store, session discord.Session, guildID, channelID, messageID string) {
+func updateTopThree(ctx context.Context, store port.Store, session discord.Session, guildID, channelID, messageID string) {
 	challengeID := messageID
-	challenge, err := store.GetChallenge(challengeID)
+	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
 		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
 		return
@@ -173,9 +174,9 @@ func updateTopThree(store port.Store, session discord.Session, guildID, channelI
 	}
 }
 
-func HandleDisplayTimes(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleDisplayTimes(ctx context.Context, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	challengeID := interaction.Message.ID
-	challenge, err := store.GetChallenge(challengeID)
+	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
 		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
 		return

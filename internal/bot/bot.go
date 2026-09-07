@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -15,15 +16,19 @@ import (
 )
 
 type bot struct {
+	ctx      context.Context
 	cfg      config.Config
 	session  *discordgo.Session
 	store    port.Store
 	sessions *buildersession.Store
 }
 
-func New(cfg config.Config, store port.Store, session *discordgo.Session) (*bot, error) {
-
+// New wires up the bot and registers its slash commands. ctx bounds the lifetime
+// of work started from interaction handlers; cancelling it unwinds in-flight
+// store operations at shutdown.
+func New(ctx context.Context, cfg config.Config, store port.Store, session *discordgo.Session) (*bot, error) {
 	bot := &bot{
+		ctx:      ctx,
 		cfg:      cfg,
 		session:  session,
 		store:    store,
@@ -86,8 +91,8 @@ func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction 
 	case discordgo.InteractionApplicationCommand:
 		handler.ApplicationCommand(session, interaction)
 	case discordgo.InteractionMessageComponent:
-		handler.InteractionMessageComponent(bot.sessions, bot.store, session, interaction)
+		handler.InteractionMessageComponent(bot.ctx, bot.sessions, bot.store, session, interaction)
 	case discordgo.InteractionModalSubmit:
-		handler.ModalSubmit(bot.store, session, interaction)
+		handler.ModalSubmit(bot.ctx, bot.store, session, interaction)
 	}
 }

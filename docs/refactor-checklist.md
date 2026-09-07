@@ -88,9 +88,14 @@ single ~475-line switch. Adding a game meant editing every package.
       `car`, `stage` ... packages. Reducing the count of types named `Model` and
       the `challengeModel` alias is left for later
       (`internal/store/port/port.go`)
-- [ ] Thread `context.Context` through the store methods and Discord calls, and
-      drive shutdown from a cancelled context
-      (`internal/model/model.go`, `internal/store/...`, `cmd/main.go`)
+- [x] Thread `context.Context` through the store methods and drive shutdown
+      from a cancelled context. `main` uses `signal.NotifyContext`; the context
+      flows `bot` -> interaction handlers -> `port.Store`. Both stores refuse a
+      cancelled context at entry (bbolt has no mid-transaction cancellation).
+      Passing `discordgo.WithContext` into the Discord calls is deferred - it
+      needs the `discord.Session` mock assertions reworked
+      (`internal/store/port/port.go`, `internal/store/...`, `internal/bot/...`,
+      `cmd/main.go`)
 
 ## 4. Store layer
 
