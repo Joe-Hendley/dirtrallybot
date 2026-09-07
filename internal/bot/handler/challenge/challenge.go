@@ -61,8 +61,8 @@ type invocation struct {
 }
 
 var randomisers = map[game.Model]challenge.Randomiser{
-	game.DR2: randomiser.NewSimple(game.DR2),
-	game.WRC: randomiser.NewSimple(game.WRC),
+	game.DR2: randomiser.NewDeterministic(game.DR2),
+	game.WRC: randomiser.NewDeterministic(game.WRC),
 }
 
 // HandleNewChallenge opens the challenge builder for whichever game the slash

@@ -45,7 +45,7 @@ func TestBoltStore(t *testing.T) {
 }
 
 func TestPutAndGet(t *testing.T) {
-	r := randomiser.NewSimple(game.DR2)
+	r := randomiser.NewDeterministic(game.DR2)
 	challengeIDs := []string{
 		"challenge1",
 		"challenge2",
@@ -83,7 +83,7 @@ func TestPutAndGet(t *testing.T) {
 func TestRegisterCompletion(t *testing.T) {
 	store := MustCreateStore(t)
 	challengeID := "123"
-	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewSimple(game.DR2))
+	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewDeterministic(game.DR2))
 
 	err := store.PutChallenge(context.Background(), challengeID, myChallenge)
 	if err != nil {

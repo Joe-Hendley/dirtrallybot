@@ -13,22 +13,26 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 )
 
-type Simple struct {
+// Deterministic picks stages, cars and weather with a fixed PCG seed, so a given
+// sequence of calls always produces the same challenges. This is intentional:
+// challenges are meant to be reproducible.
+type Deterministic struct {
 	randomSource *rand.Rand
 	game         game.Model
 
 	mu sync.Mutex
 }
 
-func NewSimple(game game.Model) *Simple {
-	return &Simple{
+// NewDeterministic returns a Deterministic randomiser for a game, seeded with a
+// fixed value so its output is reproducible across restarts.
+func NewDeterministic(game game.Model) *Deterministic {
+	return &Deterministic{
 		randomSource: rand.New(rand.NewPCG(0, 0)),
 		game:         game,
-		mu:           sync.Mutex{},
 	}
 }
 
-func (s *Simple) Car() car.Model {
+func (s *Deterministic) Car() car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -39,7 +43,7 @@ func (s *Simple) Car() car.Model {
 	return cars[s.randomSource.IntN(len(cars))]
 }
 
-func (s *Simple) CarFromClass(class class.Model) car.Model {
+func (s *Deterministic) CarFromClass(class class.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -47,7 +51,7 @@ func (s *Simple) CarFromClass(class class.Model) car.Model {
 	return cars[s.randomSource.IntN(len(cars))]
 }
 
-func (s *Simple) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
+func (s *Deterministic) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -58,7 +62,7 @@ func (s *Simple) CarFromDrivetrain(drivetrain drivetrain.Model) car.Model {
 	return cars[s.randomSource.IntN(len(cars))]
 }
 
-func (s *Simple) Loc() location.Model {
+func (s *Deterministic) Loc() location.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -66,7 +70,7 @@ func (s *Simple) Loc() location.Model {
 	return locs[s.randomSource.IntN(len(locs))]
 }
 
-func (s *Simple) Stage(location location.Model) stage.Model {
+func (s *Deterministic) Stage(location location.Model) stage.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,7 +78,7 @@ func (s *Simple) Stage(location location.Model) stage.Model {
 	return stages[s.randomSource.IntN(len(stages))]
 }
 
-func (s *Simple) StageOfDistance(location location.Model, distance stage.Distance) stage.Model {
+func (s *Deterministic) StageOfDistance(location location.Model, distance stage.Distance) stage.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -87,7 +91,7 @@ func (s *Simple) StageOfDistance(location location.Model, distance stage.Distanc
 	return stages[s.randomSource.IntN(len(stages))]
 }
 
-func (s *Simple) Weather(location location.Model) weather.Model {
+func (s *Deterministic) Weather(location location.Model) weather.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

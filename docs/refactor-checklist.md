@@ -161,11 +161,11 @@ The `Simple` randomiser seeds `rand.NewPCG(0, 0)` deliberately — challenge
 sequences are meant to be deterministic and reproducible. The name does not
 convey that.
 
-- [ ] Rename `Simple` / `NewSimple` to something that signals determinism
-      (e.g. `Deterministic`, `Seeded`, `Fixed`) and document why the seed is
-      fixed
-      (`internal/randomiser/simple.go`, callers in
-      `internal/bot/handler/challenge/challenge.go`)
+- [x] `randomiser.Simple` / `NewSimple` renamed to `Deterministic` /
+      `NewDeterministic`, file renamed to `deterministic.go`, with a doc comment
+      explaining the fixed PCG seed is intentional (reproducible challenges). A
+      test pins the reproducibility
+      (`internal/randomiser/deterministic.go`)
 
 ## 7. Project layout and tooling
 
