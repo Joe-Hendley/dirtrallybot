@@ -3,7 +3,6 @@ package completion
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"slices"
 	"strings"
@@ -27,7 +26,24 @@ const (
 	challengeIDIndex = 1
 	userIDIndex      = 2
 	customIDDelim    = "_"
+
+	genericErrorMessage = "☹️ something went wrong, please contact an administrator"
 )
+
+// respondEphemeral sends a private message back to whoever triggered the
+// interaction, logging if even that fails.
+func respondEphemeral(session discord.InteractionResponder, interaction *discordgo.InteractionCreate, content string) {
+	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		slog.Error("sending ephemeral response", "err", err)
+	}
+}
 
 func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	customIDParts := []string{SubmitCompletionPrefix, "", ""}
@@ -91,7 +107,7 @@ func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Se
 		})
 
 		if respErr != nil {
-			log.Printf("error sending response to bad timestamp: %v\n", respErr)
+			slog.Error("responding to invalid timestamp", "err", respErr)
 		}
 		return
 	}
@@ -100,18 +116,8 @@ func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Se
 	err = store.RegisterCompletion(ctx, challengeID, completion)
 
 	if err != nil {
-		slog.Error("submitting timestamp", "challenge-id", challengeID, "err", err)
-		respErr := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "☹️ an error occurred submitting your time, please contact an administrator",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-
-		if respErr != nil {
-			log.Printf("error sending response: %v\n", respErr)
-		}
+		slog.Error("registering completion", "challenge_id", challengeID, "err", err)
+		respondEphemeral(session, interaction, genericErrorMessage)
 		return
 	}
 
@@ -125,7 +131,7 @@ func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Se
 	})
 
 	if err != nil {
-		log.Printf("error sending response to valid timestamp: %v\n", err)
+		slog.Error("responding to valid timestamp", "err", err)
 	}
 
 	updateTopThree(ctx, store, session, interaction.GuildID, interaction.ChannelID, challengeID)
@@ -148,7 +154,7 @@ func updateTopThree(ctx context.Context, store port.Store, session discord.Sessi
 	challengeID := messageID
 	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
-		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
+		slog.Warn("getting challenge", "challenge_id", challengeID, "err", err)
 		return
 	}
 
@@ -170,7 +176,7 @@ func updateTopThree(ctx context.Context, store port.Store, session discord.Sessi
 
 	_, err = session.ChannelMessageEditComplex(edited)
 	if err != nil {
-		slog.Error("editing challenge id: %s : %v\n", challengeID, err)
+		slog.Error("editing challenge message", "challenge_id", challengeID, "err", err)
 		return
 	}
 }
@@ -179,7 +185,8 @@ func HandleDisplayTimes(ctx context.Context, store port.Store, session discord.S
 	challengeID := interaction.Message.ID
 	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
-		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
+		slog.Warn("getting challenge", "challenge_id", challengeID, "err", err)
+		respondEphemeral(session, interaction, "☹️ couldn't find this challenge - it may have expired")
 		return
 	}
 

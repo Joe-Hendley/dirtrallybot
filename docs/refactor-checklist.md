@@ -145,11 +145,15 @@ single ~475-line switch. Adding a game meant editing every package.
       no longer panics on more than three millisecond digits. Round-trip test
       added
       (`internal/model/timestamp/timestamp.go`)
-- [ ] Standardise on `slog`; remove `log.Printf`, and fix printf directives
-      passed to structured calls, e.g. `slog.Error("starting session: %w", ...)`
-      and `slog.Error("editing challenge id: %s : %v\n", ...)`
+- [x] Standardise on `slog`. `log.Printf` is gone from the completion handler,
+      `main`'s stray `%w`/`%v` verbs are cleaned up, and the printf-style
+      `slog.Error("editing challenge id: %s : %v\n", ...)` is now a structured
+      call
       (`cmd/main.go`, `internal/bot/handler/completion/completion.go`)
-- [ ] Surface failures to the user where handlers currently only log and return
+- [x] Surface failures to the user where handlers only logged: `HandleDisplayTimes`
+      now replies when the challenge can't be loaded, and a failed
+      `RegisterCompletion` gets a generic error reply instead of a silent return
+      (`internal/bot/handler/completion/completion.go`)
 
 ## 6. Randomiser naming
 
