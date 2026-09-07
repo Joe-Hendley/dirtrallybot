@@ -5,7 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/memorystore"
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +38,25 @@ func TestRegisterCompletion(t *testing.T) {
 		t.Errorf("completion not applied")
 	}
 
+}
+
+func TestReadsAreIsolatedFromStoredState(t *testing.T) {
+	ctx := context.Background()
+	store := memorystore.New()
+
+	stored := challenge.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challenge.Completion{
+		challenge.NewCompletion("alice", time.Minute),
+	})
+	require.NoError(t, store.PutChallenge(ctx, "c1", stored))
+
+	// Mutating a value read back must not reach the store.
+	got, err := store.GetChallenge(ctx, "c1")
+	require.NoError(t, err)
+	got.RegisterCompletion(challenge.NewCompletion("mallory", time.Hour))
+
+	again, err := store.GetChallenge(ctx, "c1")
+	require.NoError(t, err)
+	require.Len(t, again.Completions(), 1)
 }
 
 func TestCancelledContextIsRefused(t *testing.T) {

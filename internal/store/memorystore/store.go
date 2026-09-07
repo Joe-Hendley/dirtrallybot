@@ -6,24 +6,27 @@ import (
 	"sync"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/dto"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 )
 
 var _ port.Store = &Store{}
 
+// Store keeps challenges in memory. It holds DTOs rather than domain values so
+// that reads and writes are copies, matching the persistence guarantees of the
+// bolt store.
 type Store struct {
-	lock         *sync.Mutex
-	challengeMap map[string]challenge.Model
+	lock         sync.Mutex
+	challengeMap map[string]dto.Challenge
 }
 
 func New() *Store {
 	return &Store{
-		lock:         &sync.Mutex{},
-		challengeMap: map[string]challenge.Model{},
+		challengeMap: map[string]dto.Challenge{},
 	}
 }
 
-func (s *Store) PutChallenge(ctx context.Context, id string, challenge challenge.Model) error {
+func (s *Store) PutChallenge(ctx context.Context, id string, c challenge.Model) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -31,7 +34,7 @@ func (s *Store) PutChallenge(ctx context.Context, id string, challenge challenge
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.challengeMap[id] = challenge
+	s.challengeMap[id] = dto.FromChallenge(c)
 
 	return nil
 }
@@ -49,7 +52,7 @@ func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge
 		return challenge.Model{}, fmt.Errorf("challenge %s not found", challengeID)
 	}
 
-	return got, nil
+	return got.ToChallenge(), nil
 }
 
 func (s *Store) DeleteChallenge(ctx context.Context, id string) error {
@@ -78,8 +81,9 @@ func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, comp
 		return fmt.Errorf("challenge %s not found", challengeID)
 	}
 
-	stored.RegisterCompletion(completion)
-	s.challengeMap[challengeID] = stored
+	updated := stored.ToChallenge()
+	updated.RegisterCompletion(completion)
+	s.challengeMap[challengeID] = dto.FromChallenge(updated)
 
 	return nil
 }

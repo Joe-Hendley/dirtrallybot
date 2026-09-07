@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
-	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore/internal/dto"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/dto"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 
 	bolt "go.etcd.io/bbolt"
@@ -79,7 +79,7 @@ func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge
 	dto := dto.Challenge{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
-		buf := tx.Bucket([]byte("challenges")).Get([]byte(challengeID))
+		buf := tx.Bucket([]byte(ChallengeBucketID)).Get([]byte(challengeID))
 		if buf == nil {
 			return fmt.Errorf("challenge %s not found", challengeID)
 		}
@@ -96,7 +96,7 @@ func (s *Store) DeleteChallenge(ctx context.Context, challengeID string) error {
 	}
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte("challenges")).Delete([]byte(challengeID))
+		return tx.Bucket([]byte(ChallengeBucketID)).Delete([]byte(challengeID))
 	})
 
 	return err
@@ -108,7 +108,7 @@ func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, comp
 	}
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		buf := tx.Bucket([]byte("challenges")).Get([]byte(challengeID))
+		buf := tx.Bucket([]byte(ChallengeBucketID)).Get([]byte(challengeID))
 		if buf == nil {
 			return fmt.Errorf("challenge %s not found", challengeID)
 		}

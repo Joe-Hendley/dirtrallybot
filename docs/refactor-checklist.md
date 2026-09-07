@@ -103,22 +103,22 @@ single ~475-line switch. Adding a game meant editing every package.
 
 ## 4. Store layer
 
-- [ ] Route both stores through the versioned DTO so serialisation guarantees
-      match; `memorystore` currently stores domain objects directly
-      (`internal/store/memorystore/store.go`,
-      `internal/store/boltstore/internal/dto/dto.go`)
+- [x] Route both stores through the versioned DTO so serialisation guarantees
+      match. The `dto` package moved up to `internal/store/dto` (shared);
+      `memorystore` now holds `dto.Challenge` and converts on every read/write,
+      giving the same copy semantics as the bolt store
+      (`internal/store/dto/dto.go`, `internal/store/memorystore/store.go`)
 - [ ] Reconcile `docs/datamodel.md` (an event log keyed by snowflake) with the
       implementation (a mutable challenge blob with read-modify-write): pick one
       model and align the other
 - [ ] Implement challenge feedback (the good/bad events in `datamodel.md`); the
       feedback buttons are hardcoded `Disabled: true`
       (`internal/bot/handler/challenge/challenge.go`)
-- [ ] Fix the `memorystore` aliasing: `challenge.Model` is copied by value but
-      shares the `completions` slice backing array, so `RegisterCompletion`'s
-      `append` can mutate the stored copy
-      (`internal/store/memorystore/store.go`,
-      `internal/model/challenge/challenge.go`)
-- [ ] Use the `ChallengeBucketID` constant in `GetChallenge`, `DeleteChallenge`
+- [x] Fix the `memorystore` aliasing: `challenge.Model` was copied by value but
+      shared the `completions` slice backing array. Resolved by the DTO
+      round-trip above; a regression test covers read isolation
+      (`internal/store/memorystore/store_test.go`)
+- [x] Use the `ChallengeBucketID` constant in `GetChallenge`, `DeleteChallenge`
       and `RegisterCompletion` instead of the `"challenges"` literal
       (`internal/store/boltstore/store.go`)
 
