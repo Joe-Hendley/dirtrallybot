@@ -6,6 +6,17 @@ the domain and presentation split in section 3 far easier to test).
 
 Tick items off as they land. Each item notes the primary files involved.
 
+## Status
+
+Sections 1, 3, 5, 6, 7 and 8 are complete. Sections 2 and 4 are complete bar
+two deliberately deferred items:
+
+- **§2** — the `switch g` dispatch is gone, replaced by data tables. Moving those
+  tables out to embedded data files is tracked separately in
+  `catalogue-data-migration.md`.
+- **§4.3** — the 👍/👎 feedback feature is out of scope for a refactor pass and
+  stays a TODO in `datamodel.md`.
+
 ## 1. Challenge builder state
 
 The builder reconstructs its in-progress state from Discord component custom IDs
@@ -184,4 +195,6 @@ convey that.
 - [x] Cover the builder config-from-interaction parsing (the riskiest code)
       before reworking it, as a safety net
       (`internal/bot/handler/challenge/challengebuilder_test.go`)
-- [ ] Add tests for the stores, the randomiser, and `config`
+- [x] Added tests for `config` (§3), the randomiser (§6), the builder-session
+      store, memorystore read isolation and cancelled-context handling (§4),
+      plus catalogue-integrity tests (§2) and the render package (§3)
