@@ -1,32 +1,68 @@
 # Data Model
 
-I don't think this bot can be completely stateless - we might need to keep the session alive for button interactions to be persistent.
+## What the bot stores today
 
-We want to store the following things somewhere:
+The bot is not fully stateless: button interactions on a posted challenge need
+the challenge's details to still be available when someone later submits a time.
 
-- what challenges have been generated, so we have a reference for the following
-- what completion times are marked against that challenge, so we have a record of how well we did against each other
-- whether the car / track / weather combination for a particular challenge was good or bad, to modify future challenge generation
-- the current state of the challenge generation modifiers
+The `port.Store` interface (`internal/store/port`) is the whole persistence
+surface:
 
-That translates to the following set of events:
+- `PutChallenge` — save a generated challenge
+- `GetChallenge` — load one
+- `DeleteChallenge` — remove one
+- `RegisterCompletion` — append a completion time to a stored challenge
 
-- Creation
-  - challenge details
-- Completion
-  - user ID
-  - user display name
-  - challenge ID
-  - duration
-- Feedback
-  - user ID
-  - challenge ID
-  - challenge feedback
+A challenge is keyed by the Discord message ID of the message the bot posts for
+it. That ID is a snowflake, so it also encodes a creation timestamp.
 
-and some sort of lump of modifiers - for now, these will live in memory, but in the interest of making everything stateless they could go and live with whatever persistent store the events use.
+### Stored shape
 
-Discord uses unique IDs as documented here: https://discord.com/developers/docs/reference#snowflakes
+Challenges are stored as a versioned DTO (`internal/store/dto`), not as the
+domain type directly, so the on-disk format can evolve independently of the
+model. Each DTO carries a `Version` field.
 
-This provides a handy event ID - we can use the ID of interaction that causes an event to be created.
+A stored challenge holds:
 
-The snowflake also contains a timestamp to the millisecond level, which is good enough for our purposes - when (re)hydrating the bot we can use the snowflake to provide an event order. While imperfect, the only case where order really matters is ensuring events relating to a particular challenge being processed after the challenge creation event.
+- the stage (name, location, distance)
+- the weather
+- the car (name, class)
+- the list of completions, each `{userID, duration}`
+
+`RegisterCompletion` is read-modify-write: load the challenge, append the
+completion, write it back.
+
+### Implementations
+
+- `boltstore` — a bbolt file, one `challenges` bucket, gob-encoded DTOs. This is
+  the default.
+- `memorystore` — a map of the same DTOs, for tests and local runs. It holds
+  DTOs rather than domain values so that reads and writes copy, matching bolt.
+
+The challenge builder's in-progress state is separate again: it lives only in
+memory (`internal/store/buildersession`) with a 15-minute TTL and never reaches
+`port.Store`.
+
+## Not built yet
+
+- **Feedback.** The 👍 / 👎 buttons on a posted challenge are disabled. The
+  intent was to record whether a car / stage / weather combination was good or
+  bad and feed that back into generation.
+- **Generation modifiers.** There is no persisted or in-memory set of weightings
+  that biases future challenge generation.
+
+## A possible future direction: an event log
+
+An earlier design treated the store as an append-only event log rather than a
+mutable blob:
+
+- `Creation` — the challenge details
+- `Completion` — `{userID, displayName, challengeID, duration}`
+- `Feedback` — `{userID, challengeID, feedback}`
+
+Each event would be keyed by the ID of the interaction that produced it. On
+restart the bot would replay events in snowflake order to rebuild state; order
+only really matters for keeping a challenge's later events after its creation.
+
+This would make feedback and modifiers natural to add, at the cost of replay
+logic and log compaction. It is not what the code does today.

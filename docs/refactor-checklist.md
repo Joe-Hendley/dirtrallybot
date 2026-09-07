@@ -108,9 +108,10 @@ single ~475-line switch. Adding a game meant editing every package.
       `memorystore` now holds `dto.Challenge` and converts on every read/write,
       giving the same copy semantics as the bolt store
       (`internal/store/dto/dto.go`, `internal/store/memorystore/store.go`)
-- [ ] Reconcile `docs/datamodel.md` (an event log keyed by snowflake) with the
-      implementation (a mutable challenge blob with read-modify-write): pick one
-      model and align the other
+- [x] Reconcile `docs/datamodel.md` with the implementation: the doc now
+      describes the actual `port.Store` / versioned-DTO design and keeps the
+      event-log idea only as a clearly-labelled "possible future direction"
+      (`docs/datamodel.md`)
 - [ ] Implement challenge feedback (the good/bad events in `datamodel.md`); the
       feedback buttons are hardcoded `Disabled: true`
       (`internal/bot/handler/challenge/challenge.go`)
