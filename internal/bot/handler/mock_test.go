@@ -2,8 +2,8 @@ package handler_test
 
 import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,31 +38,31 @@ func (sm *sessionMock) InteractionRespond(interaction *discordgo.Interaction, re
 	return args.Error(0)
 }
 
-var _ model.Store = &storeMock{}
+var _ port.Store = &storeMock{}
 
 type storeMock struct {
 	mock.Mock
 }
 
-// DeleteChallenge implements model.Store.
+// DeleteChallenge implements port.Store.
 func (sm *storeMock) DeleteChallenge(challengeID string) error {
 	args := sm.Called(challengeID)
 	return args.Error(0)
 }
 
-// GetChallenge implements model.Store.
+// GetChallenge implements port.Store.
 func (sm *storeMock) GetChallenge(challengeID string) (challenge.Model, error) {
 	args := sm.Called(challengeID)
 	return args.Get(0).(challenge.Model), args.Error(1)
 }
 
-// PutChallenge implements model.Store.
+// PutChallenge implements port.Store.
 func (sm *storeMock) PutChallenge(challengeID string, challenge challenge.Model) error {
 	args := sm.Called(challengeID)
 	return args.Error(0)
 }
 
-// RegisterCompletion implements model.Store.
+// RegisterCompletion implements port.Store.
 func (sm *storeMock) RegisterCompletion(challengeID string, completion challenge.Completion) error {
 	args := sm.Called(challengeID, completion)
 	return args.Error(0)

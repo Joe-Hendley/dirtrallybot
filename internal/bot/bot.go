@@ -9,19 +9,19 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
 type bot struct {
 	cfg      config.Config
 	session  *discordgo.Session
-	store    model.Store
+	store    port.Store
 	sessions *buildersession.Store
 }
 
-func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot, error) {
+func New(cfg config.Config, store port.Store, session *discordgo.Session) (*bot, error) {
 
 	bot := &bot{
 		cfg:      cfg,

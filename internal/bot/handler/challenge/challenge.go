@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -109,7 +109,7 @@ type SessionStore interface {
 	Delete(builderID string)
 }
 
-func HandleChallengeBuilderInteraction(sessions SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleChallengeBuilderInteraction(sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	split := strings.Split(interaction.MessageComponentData().CustomID, idFieldDelimiter)
 	lastField := split[len(split)-1]
 
@@ -169,7 +169,7 @@ func updateCarSelectMessage(sessions SessionStore, session discord.InteractionRe
 	}
 }
 
-func updateSelectMessageAndCreateChallenge(sessions SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func updateSelectMessageAndCreateChallenge(sessions SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	config, err := configFromInteraction(sessions, interaction)
 
 	if err != nil {

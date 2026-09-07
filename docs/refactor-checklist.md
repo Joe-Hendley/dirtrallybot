@@ -82,10 +82,12 @@ single ~475-line switch. Adding a game meant editing every package.
       them), and `bot.New` propagates the failure. Dead `cmdIDs` map removed;
       `bot.cfg` is now populated (see §5)
       (`internal/bot/commands.go`, `internal/bot/bot.go`, `cmd/main.go`)
-- [ ] Rename the `internal/model` package (it holds only the store port) to
-      something like `internal/store/port`, or fold the interface into
-      `internal/store`; reduce the number of types named `Model` and drop the
-      `challengeModel` import alias
+- [x] Move the store port out of the misnamed `internal/model` package (which
+      held only the `Store` interface) to `internal/store/port` as `port.Store`.
+      `internal/model/` is now just a namespace directory for the `challenge`,
+      `car`, `stage` ... packages. Reducing the count of types named `Model` and
+      the `challengeModel` alias is left for later
+      (`internal/store/port/port.go`)
 - [ ] Thread `context.Context` through the store methods and Discord calls, and
       drive shutdown from a cancelled context
       (`internal/model/model.go`, `internal/store/...`, `cmd/main.go`)

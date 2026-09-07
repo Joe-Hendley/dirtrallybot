@@ -5,9 +5,9 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore/internal/dto"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -16,7 +16,7 @@ const ChallengeBucketID = "challenges"
 
 // TODO - implement some sort of backup like this https://github.com/treeder/bolt-backup/blob/master/backup.go
 
-var _ model.Store = &Store{}
+var _ port.Store = &Store{}
 
 type Store struct {
 	db *bolt.DB

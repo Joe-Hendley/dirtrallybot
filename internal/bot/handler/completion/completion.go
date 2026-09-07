@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/timestamp"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -61,7 +61,7 @@ func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *
 	}
 }
 
-func HandleSubmitModal(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleSubmitModal(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
@@ -142,7 +142,7 @@ func medal(place int) string {
 	}
 }
 
-func updateTopThree(store model.Store, session discord.Session, guildID, channelID, messageID string) {
+func updateTopThree(store port.Store, session discord.Session, guildID, channelID, messageID string) {
 	challengeID := messageID
 	challenge, err := store.GetChallenge(challengeID)
 	if err != nil {
@@ -173,7 +173,7 @@ func updateTopThree(store model.Store, session discord.Session, guildID, channel
 	}
 }
 
-func HandleDisplayTimes(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleDisplayTimes(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	challengeID := interaction.Message.ID
 	challenge, err := store.GetChallenge(challengeID)
 	if err != nil {

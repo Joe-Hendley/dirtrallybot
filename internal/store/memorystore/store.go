@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 )
 
-var _ model.Store = &Store{}
+var _ port.Store = &Store{}
 
 type Store struct {
 	lock         *sync.Mutex

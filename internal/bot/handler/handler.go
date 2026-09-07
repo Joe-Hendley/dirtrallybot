@@ -6,7 +6,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/completion"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -21,7 +21,7 @@ func ApplicationCommand(session discord.Session, interaction *discordgo.Interact
 	}
 }
 
-func InteractionMessageComponent(sessions challenge.SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func InteractionMessageComponent(sessions challenge.SessionStore, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionMessageComponent {
 		return
 	}
@@ -38,7 +38,7 @@ func InteractionMessageComponent(sessions challenge.SessionStore, store model.St
 	}
 }
 
-func ModalSubmit(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func ModalSubmit(store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
