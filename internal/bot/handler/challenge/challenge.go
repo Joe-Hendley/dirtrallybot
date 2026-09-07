@@ -60,9 +60,10 @@ type invocation struct {
 	interaction *discordgo.Interaction
 }
 
-var (
-	DR2Randomiser = randomiser.NewSimple(game.DR2)
-)
+var randomisers = map[game.Model]challenge.Randomiser{
+	game.DR2: randomiser.NewSimple(game.DR2),
+	game.WRC: randomiser.NewSimple(game.WRC),
+}
 
 // HandleNewChallenge opens the challenge builder for whichever game the slash
 // command names.
@@ -192,8 +193,15 @@ func updateSelectMessageAndCreateChallenge(ctx context.Context, sessions Session
 		slog.Error("updating Create Custom Challenge Final Message", "err", err)
 	}
 
-	challenge := challenge.NewRandomChallenge(config, DR2Randomiser)
-	slog.Info("new challenge generated", "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
+	r, ok := randomisers[config.Game]
+	if !ok {
+		slog.Error("no randomiser for game", "game", config.Game.String())
+		updateMessageWithError(session, interaction)
+		return
+	}
+
+	challenge := challenge.NewRandomChallenge(config, r)
+	slog.Info("new challenge generated", "game", config.Game.String(), "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
 
 	challengeID, err := sendChallengeMessage(session, interaction.ChannelID, challenge)
 	if err != nil {
@@ -202,7 +210,7 @@ func updateSelectMessageAndCreateChallenge(ctx context.Context, sessions Session
 
 	err = store.PutChallenge(ctx, challengeID, challenge)
 	if err != nil {
-		slog.Error("storing custom dr2 challenge", "err", err)
+		slog.Error("storing challenge", "challenge_id", challengeID, "err", err)
 	}
 
 	sessions.Delete(interaction.Message.ID)

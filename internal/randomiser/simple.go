@@ -77,7 +77,13 @@ func (s *Simple) Stage(location location.Model) stage.Model {
 func (s *Simple) StageOfDistance(location location.Model, distance stage.Distance) stage.Model {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	stages := stage.AtLocationWithDistance(location, distance)
+	if len(stages) == 0 {
+		// No stage of that length here; fall back to any stage at the location.
+		stages = stage.AtLocation(location)
+	}
+
 	return stages[s.randomSource.IntN(len(stages))]
 }
 

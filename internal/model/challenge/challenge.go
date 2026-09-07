@@ -21,6 +21,7 @@ type Randomiser interface {
 	Loc() location.Model
 	Weather(loc location.Model) weather.Model
 	Stage(loc location.Model) stage.Model
+	StageOfDistance(loc location.Model, distance stage.Distance) stage.Model
 }
 
 type Model struct {
@@ -50,9 +51,12 @@ func NewRandomChallenge(c Config, r Randomiser) Model {
 		loc = r.Loc()
 	}
 
-	if c.Stage != nil {
+	switch {
+	case c.Stage != nil:
 		challenge.stage = *c.Stage
-	} else {
+	case c.Distance != nil:
+		challenge.stage = r.StageOfDistance(loc, *c.Distance)
+	default:
 		challenge.stage = r.Stage(loc)
 	}
 

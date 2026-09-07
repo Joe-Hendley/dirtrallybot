@@ -112,8 +112,10 @@ single ~475-line switch. Adding a game meant editing every package.
       describes the actual `port.Store` / versioned-DTO design and keeps the
       event-log idea only as a clearly-labelled "possible future direction"
       (`docs/datamodel.md`)
-- [ ] Implement challenge feedback (the good/bad events in `datamodel.md`); the
-      feedback buttons are hardcoded `Disabled: true`
+- [~] Implement challenge feedback (the good/bad events in `datamodel.md`); the
+      feedback buttons are hardcoded `Disabled: true`. Out of scope for this
+      refactor pass - it is a feature, not a structural change. Tracked as a
+      TODO in `datamodel.md` ("Not built yet")
       (`internal/bot/handler/challenge/challenge.go`)
 - [x] Fix the `memorystore` aliasing: `challenge.Model` was copied by value but
       shared the `completions` slice backing array. Resolved by the DTO
@@ -125,14 +127,14 @@ single ~475-line switch. Adding a game meant editing every package.
 
 ## 5. Correctness bugs
 
-- [ ] `NewRandomChallenge` ignores `Config.Distance` when randomising a stage,
-      so choosing a distance plus a random stage gives any length. Add
-      `StageOfDistance` to the `Randomiser` interface (it already exists on
-      `Simple`) and use it
+- [x] `NewRandomChallenge` ignored `Config.Distance` when randomising a stage.
+      `StageOfDistance` is now on the `Randomiser` interface and used;
+      `Simple.StageOfDistance` falls back to any stage if the location has none
+      of that length
       (`internal/model/challenge/challenge.go`,
       `internal/randomiser/simple.go`)
-- [ ] WRC challenges use the DR2 randomiser — `DR2Randomiser` is the only one
-      wired in
+- [x] WRC challenges used the DR2 randomiser. The handler now holds a randomiser
+      per game and picks by `config.Game`
       (`internal/bot/handler/challenge/challenge.go`)
 - [x] `bot.New` never sets the `cfg` field, so `Shutdown` and the
       `!cars` / `!stages` test-server gate run against a zero `Config`. Fixed
