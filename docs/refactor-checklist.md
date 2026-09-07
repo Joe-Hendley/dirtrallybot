@@ -12,17 +12,21 @@ The builder reconstructs its in-progress state from Discord component custom IDs
 *and* by parsing its own rendered message text. Display-string changes silently
 break state reconstruction, and the `-` delimiter is never escaped.
 
-- [ ] Persist the in-progress `challenge.Config` server-side, keyed by the
-      interaction or message ID, rather than encoding it into component custom
-      IDs and message content
-      (`internal/bot/handler/challenge/challengebuilder.go`)
-- [ ] Remove the message-content parsing in `buildCarConfigFromInteraction`,
+- [x] Persist the in-progress `challenge.Config` server-side, keyed by the
+      builder message ID, rather than encoding it into component custom IDs and
+      message content. New in-memory `buildersession.Store` with a 15-minute TTL
+      (`internal/store/buildersession/store.go`,
+      `internal/bot/handler/challenge/challengebuilder.go`)
+- [x] Remove the message-content parsing in `buildCarConfigFromInteraction`,
       including the stage-distance reverse-engineering that splits the stage
       name on spaces
       (`internal/bot/handler/challenge/challengebuilder.go`)
-- [ ] Collapse `buildStageConfigFromInteraction` and
-      `buildCarConfigFromInteraction` into a single load-then-apply path once
-      state no longer comes from two sources
+- [x] Collapse `buildStageConfigFromInteraction` and
+      `buildCarConfigFromInteraction` into a single `configFromInteraction`
+      load-apply-save path. Cascade-clearing added to the `applyX` helpers so a
+      stale downstream selection (e.g. a stage from a different location) is
+      dropped, and "random" now clears its own field
+      (`internal/bot/handler/challenge/challengebuilder.go`)
 - [ ] Extract the repeated select-menu construction
       (`random` option, option loop, `hasDefault` fallback) shared by
       `buildLocationsMenu`, `buildDistanceMenu`, `buildStageMenu`,
@@ -30,7 +34,7 @@ break state reconstruction, and the `-` delimiter is never escaped.
 - [ ] Merge `HandleNewDR2Challenge` and `HandleNewWRCChallenge`, which differ
       only by the game constant
       (`internal/bot/handler/challenge/challenge.go`)
-- [ ] Delete the `// TODO: rewrite the entire custom ID system` comment once done
+- [x] Delete the `// TODO: rewrite the entire custom ID system` comment once done
       (`internal/bot/handler/challenge/challengebuilder.go`)
 
 ## 2. Game abstraction

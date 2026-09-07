@@ -8,20 +8,23 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
 	"github.com/bwmarrin/discordgo"
 )
 
 type bot struct {
-	cfg     config.Config
-	session *discordgo.Session
-	store   model.Store
+	cfg      config.Config
+	session  *discordgo.Session
+	store    model.Store
+	sessions *buildersession.Store
 }
 
 func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot, error) {
 
 	bot := &bot{
-		session: session,
-		store:   store,
+		session:  session,
+		store:    store,
+		sessions: buildersession.New(),
 	}
 
 	session.AddHandler(bot.HandleReady)
@@ -76,7 +79,7 @@ func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction 
 	case discordgo.InteractionApplicationCommand:
 		handler.ApplicationCommand(session, interaction)
 	case discordgo.InteractionMessageComponent:
-		handler.InteractionMessageComponent(bot.store, session, interaction)
+		handler.InteractionMessageComponent(bot.sessions, bot.store, session, interaction)
 	case discordgo.InteractionModalSubmit:
 		handler.ModalSubmit(bot.store, session, interaction)
 	}

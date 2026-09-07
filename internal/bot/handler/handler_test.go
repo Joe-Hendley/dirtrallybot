@@ -12,6 +12,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/timestamp"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
 	"github.com/bwmarrin/discordgo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -102,7 +103,7 @@ func TestSubmitCompletion(t *testing.T) {
 		session.On("InteractionRespond", interaction.Interaction, mock.AnythingOfType("*discordgo.InteractionResponse"), expectedOptions).Return(nil)
 
 		// Act
-		handler.InteractionMessageComponent(store, session, &interaction)
+		handler.InteractionMessageComponent(buildersession.New(), store, session, &interaction)
 
 		// Assert
 		store.AssertExpectations(t)
@@ -293,7 +294,7 @@ func TestDisplayCompletion(t *testing.T) {
 	session.On("GuildMember", guildID, userID, expectedOptions).Return(&discordgo.Member{User: &discordgo.User{GlobalName: username}}, nil)
 
 	// Act
-	handler.InteractionMessageComponent(store, session, &interaction)
+	handler.InteractionMessageComponent(buildersession.New(), store, session, &interaction)
 
 	// Assert
 	store.AssertExpectations(t)

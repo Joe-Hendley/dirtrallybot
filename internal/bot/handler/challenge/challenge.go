@@ -94,22 +94,30 @@ func HandleNewWRCChallenge(session discord.InteractionResponder, interaction *di
 	}
 }
 
-func HandleChallengeBuilderInteraction(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+// SessionStore holds the in-progress Config for an open challenge builder,
+// keyed by the builder message ID.
+type SessionStore interface {
+	Get(builderID string) (challenge.Config, bool)
+	Put(builderID string, config challenge.Config)
+	Delete(builderID string)
+}
+
+func HandleChallengeBuilderInteraction(sessions SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	split := strings.Split(interaction.MessageComponentData().CustomID, idFieldDelimiter)
 	lastField := split[len(split)-1]
 
 	switch lastField {
 	case locationID, distanceID, stageID, weatherID:
-		updateLocationSelectMessage(session, interaction)
+		updateLocationSelectMessage(sessions, session, interaction)
 	case SubmitLocationAndStageID, drivetrainID, classID, carID:
-		updateCarSelectMessage(session, interaction)
+		updateCarSelectMessage(sessions, session, interaction)
 	case SubmitCarID:
-		updateSelectMessageAndCreateChallenge(store, session, interaction)
+		updateSelectMessageAndCreateChallenge(sessions, store, session, interaction)
 	}
 }
 
-func updateLocationSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
-	config, err := buildStageConfigFromInteraction(interaction)
+func updateLocationSelectMessage(sessions SessionStore, session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	config, err := configFromInteraction(sessions, interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Location Config", "err", err)
@@ -131,8 +139,8 @@ func updateLocationSelectMessage(session discord.InteractionResponder, interacti
 	}
 }
 
-func updateCarSelectMessage(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
-	config, err := buildCarConfigFromInteraction(interaction)
+func updateCarSelectMessage(sessions SessionStore, session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
+	config, err := configFromInteraction(sessions, interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Car Config", "err", err)
@@ -154,8 +162,8 @@ func updateCarSelectMessage(session discord.InteractionResponder, interaction *d
 	}
 }
 
-func updateSelectMessageAndCreateChallenge(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
-	config, err := buildCarConfigFromInteraction(interaction)
+func updateSelectMessageAndCreateChallenge(sessions SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+	config, err := configFromInteraction(sessions, interaction)
 
 	if err != nil {
 		slog.Error("Create Custom Challenge Final Config", "err", err)
@@ -187,6 +195,8 @@ func updateSelectMessageAndCreateChallenge(store model.Store, session discord.Se
 	if err != nil {
 		slog.Error("storing custom dr2 challenge", "err", err)
 	}
+
+	sessions.Delete(interaction.Message.ID)
 }
 
 func updateMessageWithError(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {

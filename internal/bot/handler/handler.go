@@ -23,7 +23,7 @@ func ApplicationCommand(session discord.Session, interaction *discordgo.Interact
 	}
 }
 
-func InteractionMessageComponent(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func InteractionMessageComponent(sessions challenge.SessionStore, store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionMessageComponent {
 		return
 	}
@@ -36,7 +36,7 @@ func InteractionMessageComponent(store model.Store, session discord.Session, int
 	case customID == challenge.DisplayTimesID:
 		completion.HandleDisplayTimes(store, session, interaction)
 	case strings.HasPrefix(customID, challenge.ChallengeID):
-		challenge.HandleChallengeBuilderInteraction(store, session, interaction)
+		challenge.HandleChallengeBuilderInteraction(sessions, store, session, interaction)
 	}
 }
 
