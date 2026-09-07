@@ -140,9 +140,10 @@ single ~475-line switch. Adding a game meant editing every package.
       `!cars` / `!stages` test-server gate run against a zero `Config`. Fixed
       alongside §3 (`bot.New` now sets `cfg`; cleanup no longer needs it)
       (`internal/bot/bot.go`)
-- [ ] `timestamp.Format` is not the inverse of `Parse`: milliseconds use `%d`
-      (5ms renders as `.5`, not `.005`) and minutes are space-padded via `%2.f`.
-      Add a round-trip test
+- [x] `timestamp.Format` is now the inverse of `Parse`: `%d:%02d.%03d` instead
+      of the space-padded `%2.f` minutes and unpadded `%d` milliseconds. `Parse`
+      no longer panics on more than three millisecond digits. Round-trip test
+      added
       (`internal/model/timestamp/timestamp.go`)
 - [ ] Standardise on `slog`; remove `log.Printf`, and fix printf directives
       passed to structured calls, e.g. `slog.Error("starting session: %w", ...)`
