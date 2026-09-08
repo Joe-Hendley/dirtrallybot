@@ -16,9 +16,7 @@ templ page(title string) {
 				nav a { color: #444; text-decoration: none; }
 				nav a:hover { text-decoration: underline; }
 				h1 { margin: 0 0 0.25rem; }
-				h2 { margin: 1.5rem 0 0.5rem; font-size: 1.1rem; }
 				p.count { margin: 0 0 1.5rem; color: #666; }
-				section.feedback table { margin-bottom: 0.5rem; }
 				p.empty { color: #666; }
 				article.challenge { border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
 				.head { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: baseline; }
@@ -37,6 +35,12 @@ templ page(title string) {
 				th button:hover { background: #f6f6f6; }
 				th.active button { color: #1a1a1a; }
 				th:not(.active) button { color: #888; }
+				table.feedback { table-layout: fixed; }
+				table.feedback col.tally { width: 5rem; }
+				table.feedback thead th { padding: 0.4rem 0.75rem; font-weight: 600; }
+				table.feedback th, table.feedback td { text-align: right; }
+				table.feedback th.item, table.feedback td.item, table.feedback tr.group th { text-align: left; }
+				table.feedback tr.group th { padding-top: 1.5rem; font-weight: 600; border-bottom: 2px solid #ccc; }
 			</style>
 		</head>
 		<body>
@@ -104,44 +108,50 @@ templ completionsPanel(v completionsView) {
 	</div>
 }
 
-templ feedbackPage(tables []feedbackTable) {
+templ feedbackPage(groups []feedbackGroup) {
 	@page("Feedback") {
 		<h1>Feedback</h1>
-		<p class="count">{ feedbackSummary(tables) }</p>
-		if len(tables) == 0 {
+		<p class="count">{ feedbackSummary(groups) }</p>
+		if len(groups) == 0 {
 			<p class="empty">No feedback recorded yet.</p>
 		} else {
-			for _, table := range tables {
-				@feedbackSection(table)
-			}
+			<table class="feedback">
+				<colgroup>
+					<col/>
+					<col class="tally"/>
+					<col class="tally"/>
+					<col class="tally"/>
+				</colgroup>
+				<thead>
+					<tr>
+						<th class="item">Item</th>
+						<th>👍</th>
+						<th>👎</th>
+						<th>Net</th>
+					</tr>
+				</thead>
+				for _, group := range groups {
+					@feedbackGroupRows(group)
+				}
+			</table>
 		}
 	}
 }
 
-templ feedbackSection(t feedbackTable) {
-	<section class="feedback">
-		<h2>{ t.Kind }</h2>
-		<table>
-			<thead>
-				<tr>
-					<th>{ t.Kind }</th>
-					<th>👍</th>
-					<th>👎</th>
-					<th>Net</th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, row := range t.Rows {
-					<tr>
-						<td>{ row.Name }</td>
-						<td class="num">{ strconv.Itoa(row.Up) }</td>
-						<td class="num">{ strconv.Itoa(row.Down) }</td>
-						<td class="num">{ signed(row.Net) }</td>
-					</tr>
-				}
-			</tbody>
-		</table>
-	</section>
+templ feedbackGroupRows(g feedbackGroup) {
+	<tbody>
+		<tr class="group">
+			<th colspan="4" scope="colgroup">{ g.Kind }</th>
+		</tr>
+		for _, row := range g.Rows {
+			<tr>
+				<td class="item">{ row.Name }</td>
+				<td class="num">{ strconv.Itoa(row.Up) }</td>
+				<td class="num">{ strconv.Itoa(row.Down) }</td>
+				<td class="num">{ signed(row.Net) }</td>
+			</tr>
+		}
+	</tbody>
 }
 
 templ sortableHeader(v completionsView, column, label string) {

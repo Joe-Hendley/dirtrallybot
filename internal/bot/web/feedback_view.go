@@ -7,7 +7,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
 )
 
-// kindOrder is the order the feedback tables appear in, mirroring how a
+// kindOrder is the order the feedback groups appear in, mirroring how a
 // challenge reads: where it is, then what you drive.
 var kindOrder = []popularity.Kind{
 	popularity.KindLocation,
@@ -19,8 +19,9 @@ var kindOrder = []popularity.Kind{
 	popularity.KindDrivetrain,
 }
 
-// feedbackTable is one Kind's tally, ready to render.
-type feedbackTable struct {
+// feedbackGroup is one Kind's tally, rendered as a labelled section of the
+// single feedback table.
+type feedbackGroup struct {
 	Kind string
 	Rows []feedbackRow
 }
@@ -32,9 +33,9 @@ type feedbackRow struct {
 	Net  int
 }
 
-// feedbackTables groups the snapshot by Kind, ordering each table by net score
+// feedbackGroups buckets the snapshot by Kind, ordering each group by net score
 // descending then name. A Kind nobody has voted on is left out.
-func feedbackTables(snapshot popularity.Snapshot) []feedbackTable {
+func feedbackGroups(snapshot popularity.Snapshot) []feedbackGroup {
 	rowsByKind := make(map[popularity.Kind][]feedbackRow)
 	for key, tally := range snapshot {
 		rowsByKind[key.Kind] = append(rowsByKind[key.Kind], feedbackRow{
@@ -45,7 +46,7 @@ func feedbackTables(snapshot popularity.Snapshot) []feedbackTable {
 		})
 	}
 
-	tables := make([]feedbackTable, 0, len(rowsByKind))
+	groups := make([]feedbackGroup, 0, len(rowsByKind))
 	for _, kind := range kindOrder {
 		rows, ok := rowsByKind[kind]
 		if !ok {
@@ -59,17 +60,17 @@ func feedbackTables(snapshot popularity.Snapshot) []feedbackTable {
 			return rows[i].Name < rows[j].Name
 		})
 
-		tables = append(tables, feedbackTable{Kind: kind.String(), Rows: rows})
+		groups = append(groups, feedbackGroup{Kind: kind.String(), Rows: rows})
 	}
 
-	return tables
+	return groups
 }
 
 // feedbackSummary is the count line shown under the heading.
-func feedbackSummary(tables []feedbackTable) string {
+func feedbackSummary(groups []feedbackGroup) string {
 	items := 0
-	for _, t := range tables {
-		items += len(t.Rows)
+	for _, g := range groups {
+		items += len(g.Rows)
 	}
 
 	noun := "items"

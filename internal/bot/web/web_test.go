@@ -136,8 +136,16 @@ func TestFeedbackPageListsTalliesByKind(t *testing.T) {
 	// Two thumbs up, one thumbs down nets out at +1.
 	assert.Contains(t, body, "+1")
 
-	// Tables are ordered where-first: Location before Car.
-	assert.Less(t, strings.Index(body, "<h2>Location</h2>"), strings.Index(body, "<h2>Car</h2>"))
+	// One table, with each kind as a labelled group heading.
+	assert.Equal(t, 1, strings.Count(body, `<table class="feedback">`))
+	assert.Contains(t, body, `<th colspan="4" scope="colgroup">Location</th>`)
+	assert.Contains(t, body, `<th colspan="4" scope="colgroup">Car</th>`)
+
+	// Groups are ordered where-first: Location before Car.
+	assert.Less(t,
+		strings.Index(body, `>Location</th>`),
+		strings.Index(body, `>Car</th>`),
+	)
 }
 
 func TestServesHTMX(t *testing.T) {

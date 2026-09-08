@@ -105,7 +105,7 @@ func handleFeedback(store port.Store) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := feedbackPage(feedbackTables(snapshot)).Render(r.Context(), w); err != nil {
+		if err := feedbackPage(feedbackGroups(snapshot)).Render(r.Context(), w); err != nil {
 			slog.Error("rendering feedback viewer", "err", err)
 		}
 	}
