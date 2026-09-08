@@ -274,25 +274,21 @@ func getChallengeButtons() []discordgo.MessageComponent {
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "⏱️"},
 					Style:    discordgo.PrimaryButton,
-					Disabled: false,
 					CustomID: DisplayCompletionModalID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "📋"},
 					Style:    discordgo.SecondaryButton,
-					Disabled: false,
 					CustomID: DisplayTimesID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "👍"},
 					Style:    discordgo.SuccessButton,
-					Disabled: false,
 					CustomID: feedback.GoodID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "👎"},
 					Style:    discordgo.DangerButton,
-					Disabled: false,
 					CustomID: feedback.BadID,
 				},
 			},
