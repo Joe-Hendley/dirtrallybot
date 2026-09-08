@@ -59,6 +59,12 @@ func (sm *storeMock) GetChallenge(_ context.Context, challengeID string) (challe
 	return args.Get(0).(challenge.Model), args.Error(1)
 }
 
+// ListChallenges implements port.Store.
+func (sm *storeMock) ListChallenges(_ context.Context) (map[string]challenge.Model, error) {
+	args := sm.Called()
+	return args.Get(0).(map[string]challenge.Model), args.Error(1)
+}
+
 // PutChallenge implements port.Store.
 func (sm *storeMock) PutChallenge(_ context.Context, challengeID string, challenge challenge.Model) error {
 	args := sm.Called(challengeID)

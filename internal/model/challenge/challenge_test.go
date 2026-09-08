@@ -146,3 +146,24 @@ func TestTopThree(t *testing.T) {
 		assert.Equal(t, original, completions)
 	})
 }
+
+func TestCompletion(t *testing.T) {
+	t.Run("NewCompletion records only user and time", func(t *testing.T) {
+		c := NewCompletion("alice", time.Minute)
+
+		assert.Equal(t, "alice", c.UserID())
+		assert.Equal(t, time.Minute, c.Duration())
+		assert.Empty(t, c.DisplayName())
+		assert.True(t, c.SubmittedAt().IsZero())
+	})
+
+	t.Run("NewCompletionAt also records name and submission time", func(t *testing.T) {
+		submittedAt := time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC)
+		c := NewCompletionAt("alice", "Alice", time.Minute, submittedAt)
+
+		assert.Equal(t, "alice", c.UserID())
+		assert.Equal(t, "Alice", c.DisplayName())
+		assert.Equal(t, time.Minute, c.Duration())
+		assert.Equal(t, submittedAt, c.SubmittedAt())
+	})
+}

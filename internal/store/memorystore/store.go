@@ -58,6 +58,22 @@ func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge
 	return got.ToChallenge(), nil
 }
 
+func (s *Store) ListChallenges(ctx context.Context) (map[string]challenge.Model, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	challenges := make(map[string]challenge.Model, len(s.challengeMap))
+	for id, stored := range s.challengeMap {
+		challenges[id] = stored.ToChallenge()
+	}
+
+	return challenges, nil
+}
+
 func (s *Store) DeleteChallenge(ctx context.Context, id string) error {
 	if err := ctx.Err(); err != nil {
 		return err

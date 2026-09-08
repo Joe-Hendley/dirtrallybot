@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
@@ -112,7 +113,8 @@ func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Se
 		return
 	}
 
-	completion := challenge.NewCompletion(userID, parsed)
+	displayName := discord.GetGuildMemberDisplayName(session, interaction.GuildID, userID)
+	completion := challenge.NewCompletionAt(userID, displayName, parsed, time.Now().UTC())
 	err = store.RegisterCompletion(ctx, challengeID, completion)
 
 	if err != nil {
@@ -160,13 +162,18 @@ func updateTopThree(ctx context.Context, store port.Store, session discord.Sessi
 
 	lines := []string{}
 	for lineIndex, completion := range challenge.TopThree() {
+		name := completion.DisplayName()
+		if name == "" {
+			name = discord.GetGuildMemberDisplayName(session, guildID, completion.UserID())
+		}
+
 		lines = append(
 			lines,
 			fmt.Sprintf(
 				"%s **%s**\t%s",
 				medal(lineIndex+1),
 				timestamp.Format(completion.Duration()),
-				discord.GetGuildMemberDisplayName(session, guildID, completion.UserID())),
+				name),
 		)
 	}
 

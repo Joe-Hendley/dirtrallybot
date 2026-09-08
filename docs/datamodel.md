@@ -10,6 +10,7 @@ surface:
 
 - `PutChallenge` — save a generated challenge
 - `GetChallenge` — load one
+- `ListChallenges` — load every stored challenge, keyed by ID
 - `DeleteChallenge` — remove one
 - `RegisterCompletion` — append a completion time to a stored challenge
 - `RegisterVote` — apply a 👍 / 👎 to a stored challenge and the popularity tally
@@ -29,11 +30,16 @@ A stored challenge holds:
 - the stage (name, location, distance)
 - the weather
 - the car (name, class)
-- the list of completions, each `{userID, duration}`
+- the list of completions, each `{userID, displayName, duration, submittedAt}`
 - the list of votes, each `{userID, sentiment}` — at most one per user
 
 `RegisterCompletion` is read-modify-write: load the challenge, append the
 completion, write it back.
+
+The completion `displayName` is the submitter's Discord display name captured at
+submission time, and `submittedAt` is when they submitted. Both are `V2` fields:
+completions written before them decode with `displayName` empty and
+`submittedAt` the zero time, and the challenge viewer shows a dash for each.
 
 ### Feedback and popularity
 

@@ -11,7 +11,12 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 )
 
-const V1 int = 1
+const (
+	V1 int = 1
+	// V2 completions also carry the submitter's display name and submission
+	// time. Older records decode with both fields zero-valued.
+	V2 int = 2
+)
 
 type Challenge struct {
 	Version     int
@@ -64,21 +69,25 @@ func (dto Challenge) ToChallenge() challenge.Model {
 }
 
 type Completion struct {
-	Version  int
-	UserID   string
-	Duration time.Duration
+	Version     int
+	UserID      string
+	DisplayName string
+	Duration    time.Duration
+	SubmittedAt time.Time
 }
 
 func FromCompletion(c challenge.Completion) Completion {
 	return Completion{
-		Version:  V1,
-		UserID:   c.UserID(),
-		Duration: c.Duration(),
+		Version:     V2,
+		UserID:      c.UserID(),
+		DisplayName: c.DisplayName(),
+		Duration:    c.Duration(),
+		SubmittedAt: c.SubmittedAt(),
 	}
 }
 
 func (dto Completion) ToCompletion() challenge.Completion {
-	return challenge.NewCompletion(dto.UserID, dto.Duration)
+	return challenge.NewCompletionAt(dto.UserID, dto.DisplayName, dto.Duration, dto.SubmittedAt)
 }
 
 type Vote struct {

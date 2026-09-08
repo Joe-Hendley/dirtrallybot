@@ -41,6 +41,27 @@ func TestLoadReadsEnvFile(t *testing.T) {
 	assert.Equal(t, "guild", cfg.TestServerID)
 	assert.Equal(t, config.BOLT, cfg.Store)
 	assert.Equal(t, config.RandomiserBiased, cfg.Randomiser)
+	assert.Equal(t, "localhost:8080", cfg.WebAddr)
+}
+
+func TestLoadReadsWebAddrFromEnv(t *testing.T) {
+	writeEnvFile(t)
+	t.Setenv("WEBADDR", "127.0.0.1:9000")
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "127.0.0.1:9000", cfg.WebAddr)
+}
+
+func TestLoadTreatsWebAddrOffAsDisabled(t *testing.T) {
+	writeEnvFile(t)
+	t.Setenv("WEBADDR", "off")
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Empty(t, cfg.WebAddr)
 }
 
 func writeEnvFile(t *testing.T) {

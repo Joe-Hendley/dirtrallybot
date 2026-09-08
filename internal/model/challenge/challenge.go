@@ -165,10 +165,15 @@ type Config struct {
 }
 
 type Completion struct {
-	userID   string
-	duration time.Duration
+	userID      string
+	displayName string
+	duration    time.Duration
+	submittedAt time.Time
 }
 
+// NewCompletion records a completion known only by user ID and time. It is used
+// for legacy data and where the submitter's name and submission time do not
+// matter.
 func NewCompletion(userID string, duration time.Duration) Completion {
 	return Completion{
 		userID:   userID,
@@ -176,12 +181,35 @@ func NewCompletion(userID string, duration time.Duration) Completion {
 	}
 }
 
+// NewCompletionAt records a completion together with the submitter's display
+// name as it was at submission and the moment it was submitted.
+func NewCompletionAt(userID, displayName string, duration time.Duration, submittedAt time.Time) Completion {
+	return Completion{
+		userID:      userID,
+		displayName: displayName,
+		duration:    duration,
+		submittedAt: submittedAt,
+	}
+}
+
 func (c Completion) UserID() string {
 	return c.userID
 }
 
+// DisplayName is the submitter's display name captured at submission, or "" for
+// a completion recorded without one.
+func (c Completion) DisplayName() string {
+	return c.displayName
+}
+
 func (c Completion) Duration() time.Duration {
 	return c.duration
+}
+
+// SubmittedAt is when the completion was submitted, or the zero time for a
+// completion recorded without one.
+func (c Completion) SubmittedAt() time.Time {
+	return c.submittedAt
 }
 
 // Sentiment is a thumbs-up or thumbs-down on a challenge. The zero value is

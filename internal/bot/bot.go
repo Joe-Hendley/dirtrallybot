@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/web"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
@@ -22,6 +24,7 @@ type Bot struct {
 	session  *discordgo.Session
 	store    port.Store
 	sessions *buildersession.Store
+	web      *web.Server
 }
 
 // New wires up the bot and registers its slash commands. ctx bounds the lifetime
@@ -34,6 +37,10 @@ func New(ctx context.Context, cfg config.Config, store port.Store, session *disc
 		session:  session,
 		store:    store,
 		sessions: buildersession.New(),
+	}
+
+	if cfg.WebAddr != "" {
+		bot.web = web.New(cfg.WebAddr, store)
 	}
 
 	challenge.SetGenerator(generatorFor(cfg.Randomiser))
@@ -64,11 +71,28 @@ func generatorFor(kind config.RandomiserType) challenge.Generator {
 	}
 }
 
+// ServeWeb runs the local challenge viewer until Shutdown is called. It returns
+// immediately when the viewer is disabled.
+func (bot *Bot) ServeWeb() error {
+	if bot.web == nil {
+		return nil
+	}
+	return bot.web.Start()
+}
+
 func (bot *Bot) Shutdown() error {
-	return errors.Join(
+	errs := []error{
 		cleanupGuildCommands(bot.session),
 		cleanupGlobalCommands(bot.session),
-	)
+	}
+
+	if bot.web != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		errs = append(errs, bot.web.Shutdown(ctx))
+	}
+
+	return errors.Join(errs...)
 }
 
 func (bot *Bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
