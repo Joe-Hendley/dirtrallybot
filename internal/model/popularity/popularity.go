@@ -6,6 +6,7 @@ package popularity
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
@@ -28,6 +29,31 @@ const (
 	KindClass
 	KindDrivetrain
 )
+
+// String is the singular display name for the Kind.
+func (k Kind) String() string {
+	switch k {
+	case KindStage:
+		return "Stage"
+	case KindLocation:
+		return "Location"
+	case KindDistance:
+		return "Distance"
+	case KindWeather:
+		return "Weather"
+	case KindCar:
+		return "Car"
+	case KindClass:
+		return "Class"
+	case KindDrivetrain:
+		return "Drivetrain"
+	}
+	return "invalid kind"
+}
+
+// keySeparator joins a name with its parent enum value in a stage or car Key,
+// keeping names that repeat across locations or classes distinct.
+const keySeparator = "\x1f"
 
 // Key identifies one domain item. ID is a stable string within a Kind: enum
 // kinds use the integer value, stages and cars qualify their name with their
@@ -97,12 +123,63 @@ func DrivetrainKey(d drivetrain.Model) Key {
 
 // StageKey identifies a stage, qualified by its location.
 func StageKey(s stage.Model) Key {
-	return Key{Kind: KindStage, ID: strconv.Itoa(int(s.Location())) + "\x1f" + s.Name()}
+	return Key{Kind: KindStage, ID: strconv.Itoa(int(s.Location())) + keySeparator + s.Name()}
 }
 
 // CarKey identifies a car, qualified by its class.
 func CarKey(c car.Model) Key {
-	return Key{Kind: KindCar, ID: strconv.Itoa(int(c.Class())) + "\x1f" + c.Name()}
+	return Key{Kind: KindCar, ID: strconv.Itoa(int(c.Class())) + keySeparator + c.Name()}
+}
+
+// Label is a human-readable description of the item a Key identifies. It
+// reverses the encoding applied by the *Key constructors, falling back to the
+// raw ID for a Kind or ID it cannot decode.
+func (k Key) Label() string {
+	switch k.Kind {
+	case KindStage:
+		if loc, name, ok := splitQualified(k.ID); ok {
+			return location.Model(loc).String() + " » " + name
+		}
+	case KindCar:
+		if cls, name, ok := splitQualified(k.ID); ok {
+			return name + " (" + class.Model(cls).String() + ")"
+		}
+	case KindLocation:
+		if n, err := strconv.Atoi(k.ID); err == nil {
+			return location.Model(n).String()
+		}
+	case KindDistance:
+		if n, err := strconv.Atoi(k.ID); err == nil {
+			return stage.Distance(n).String()
+		}
+	case KindWeather:
+		if n, err := strconv.Atoi(k.ID); err == nil {
+			return weather.Model(n).String()
+		}
+	case KindClass:
+		if n, err := strconv.Atoi(k.ID); err == nil {
+			return class.Model(n).String()
+		}
+	case KindDrivetrain:
+		if n, err := strconv.Atoi(k.ID); err == nil {
+			return drivetrain.Model(n).String()
+		}
+	}
+	return k.ID
+}
+
+// splitQualified separates a name from the parent enum value prefixed to it by
+// StageKey or CarKey.
+func splitQualified(id string) (parent int, name string, ok bool) {
+	before, after, found := strings.Cut(id, keySeparator)
+	if !found {
+		return 0, "", false
+	}
+	parent, err := strconv.Atoi(before)
+	if err != nil {
+		return 0, "", false
+	}
+	return parent, after, true
 }
 
 // Delta is a change to apply to one Key's stored Tally.

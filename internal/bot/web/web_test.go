@@ -105,6 +105,49 @@ func TestCompletionsFragmentUnknownChallenge(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, response.StatusCode)
 }
 
+func TestFeedbackPageWithNoVotes(t *testing.T) {
+	body := getPage(t, memorystore.New(), "/feedback")
+
+	assert.Contains(t, body, "No feedback recorded yet.")
+	assert.Contains(t, body, "0 items with feedback")
+}
+
+func TestFeedbackPageListsTalliesByKind(t *testing.T) {
+	ctx := context.Background()
+	store := memorystore.New()
+
+	require.NoError(t, store.PutChallenge(ctx, challengeID, challenge.NewChallenge(
+		stage.New("Hamra", location.SWE, stage.Short),
+		weather.SNOW,
+		car.New("Peugeot 205 GTI", class.H2FWD),
+		nil, nil,
+	)))
+
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("alice", challenge.Up)))
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("bob", challenge.Up)))
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("carol", challenge.Down)))
+
+	body := getPage(t, store, "/feedback")
+
+	assert.Contains(t, body, "7 items with feedback")
+	assert.Contains(t, body, "Sweden » Hamra")
+	assert.Contains(t, body, "Peugeot 205 GTI (H2 (FWD))")
+	assert.Contains(t, body, "Front Wheel Drive")
+	// Two thumbs up, one thumbs down nets out at +1.
+	assert.Contains(t, body, "+1")
+
+	// One table, with each kind as a labelled group heading.
+	assert.Equal(t, 1, strings.Count(body, `<table class="feedback">`))
+	assert.Contains(t, body, `<th colspan="4" scope="colgroup">Location</th>`)
+	assert.Contains(t, body, `<th colspan="4" scope="colgroup">Car</th>`)
+
+	// Groups are ordered where-first: Location before Car.
+	assert.Less(t,
+		strings.Index(body, `>Location</th>`),
+		strings.Index(body, `>Car</th>`),
+	)
+}
+
 func TestServesHTMX(t *testing.T) {
 	server := httptest.NewServer(web.Handler(memorystore.New()))
 	t.Cleanup(server.Close)
