@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("starting with config", "store", cfg.Store)
+	slog.Info("starting with config", "store", cfg.Store, "randomiser", cfg.Randomiser)
 
 	store, err := store.New(cfg)
 	if err != nil {

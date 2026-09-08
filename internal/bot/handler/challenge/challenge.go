@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/feedback"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
 	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
@@ -20,8 +22,6 @@ const (
 
 	DisplayCompletionModalID = "completion-display-modal"
 	DisplayTimesID           = "completion-display-times"
-	GoodID                   = "feedback-good"
-	BadID                    = "feedback-bad"
 
 	NewChallengeID = "newstage"
 	ResponseID     = "response"
@@ -60,9 +60,39 @@ type invocation struct {
 	interaction *discordgo.Interaction
 }
 
-var randomisers = map[game.Model]challenge.Randomiser{
-	game.DR2: randomiser.NewDeterministic(game.DR2),
-	game.WRC: randomiser.NewDeterministic(game.WRC),
+// Generator builds the randomiser that fills in a generated challenge. The
+// biased generator reads the store for the current popularity snapshot; the
+// others ignore it.
+type Generator func(ctx context.Context, store port.Store, g game.Model) challenge.Randomiser
+
+// newRandomiser is the active generator. SetGenerator overrides it - call once
+// at startup, before any interaction is served.
+var newRandomiser Generator = BiasedGenerator
+
+// SetGenerator selects the randomiser used for new challenges.
+func SetGenerator(g Generator) {
+	newRandomiser = g
+}
+
+// DeterministicGenerator builds a fixed-seed randomiser.
+func DeterministicGenerator(_ context.Context, _ port.Store, g game.Model) challenge.Randomiser {
+	return randomiser.NewDeterministic(g)
+}
+
+// RandomGenerator builds a uniform randomiser.
+func RandomGenerator(_ context.Context, _ port.Store, g game.Model) challenge.Randomiser {
+	return randomiser.NewRandom(g)
+}
+
+// BiasedGenerator builds a randomiser biased by the current popularity snapshot,
+// falling back to uniform if the snapshot cannot be read.
+func BiasedGenerator(ctx context.Context, store port.Store, g game.Model) challenge.Randomiser {
+	snapshot, err := store.Popularity(ctx)
+	if err != nil {
+		slog.Warn("loading popularity; generating without bias", "err", err)
+		snapshot = popularity.Snapshot{}
+	}
+	return randomiser.NewBiased(g, snapshot)
 }
 
 // HandleNewChallenge opens the challenge builder for whichever game the slash
@@ -193,14 +223,7 @@ func updateSelectMessageAndCreateChallenge(ctx context.Context, sessions Session
 		slog.Error("updating Create Custom Challenge Final Message", "err", err)
 	}
 
-	r, ok := randomisers[config.Game]
-	if !ok {
-		slog.Error("no randomiser for game", "game", config.Game.String())
-		updateMessageWithError(session, interaction)
-		return
-	}
-
-	challenge := challenge.NewRandomChallenge(config, r)
+	challenge := challenge.NewRandomChallenge(config, newRandomiser(ctx, store, config.Game))
 	slog.Info("new challenge generated", "game", config.Game.String(), "stage", challenge.Stage().String(), "weather", challenge.Weather().String(), "car", challenge.Car().String())
 
 	challengeID, err := sendChallengeMessage(session, interaction.ChannelID, challenge)
@@ -251,26 +274,22 @@ func getChallengeButtons() []discordgo.MessageComponent {
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "⏱️"},
 					Style:    discordgo.PrimaryButton,
-					Disabled: false,
 					CustomID: DisplayCompletionModalID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "📋"},
 					Style:    discordgo.SecondaryButton,
-					Disabled: false,
 					CustomID: DisplayTimesID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "👍"},
 					Style:    discordgo.SuccessButton,
-					Disabled: true,
-					CustomID: GoodID,
+					CustomID: feedback.GoodID,
 				},
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: "👎"},
 					Style:    discordgo.DangerButton,
-					Disabled: true,
-					CustomID: BadID,
+					CustomID: feedback.BadID,
 				},
 			},
 		},

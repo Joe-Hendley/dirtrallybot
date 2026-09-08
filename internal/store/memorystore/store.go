@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/dto"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 )
@@ -18,11 +19,13 @@ var _ port.Store = &Store{}
 type Store struct {
 	lock         sync.Mutex
 	challengeMap map[string]dto.Challenge
+	popularity   map[popularity.Key]popularity.Tally
 }
 
 func New() *Store {
 	return &Store{
 		challengeMap: map[string]dto.Challenge{},
+		popularity:   map[popularity.Key]popularity.Tally{},
 	}
 }
 
@@ -86,4 +89,51 @@ func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, comp
 	s.challengeMap[challengeID] = dto.FromChallenge(updated)
 
 	return nil
+}
+
+func (s *Store) RegisterVote(ctx context.Context, challengeID string, vote challenge.Vote) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stored, ok := s.challengeMap[challengeID]
+	if !ok {
+		return fmt.Errorf("challenge %s not found", challengeID)
+	}
+
+	updated := stored.ToChallenge()
+	deltas := popularity.RegisterVote(&updated, vote)
+	s.challengeMap[challengeID] = dto.FromChallenge(updated)
+
+	for _, delta := range deltas {
+		tally := s.popularity[delta.Key]
+		tally.Up += delta.Up
+		tally.Down += delta.Down
+		if tally == (popularity.Tally{}) {
+			delete(s.popularity, delta.Key)
+			continue
+		}
+		s.popularity[delta.Key] = tally
+	}
+
+	return nil
+}
+
+func (s *Store) Popularity(ctx context.Context) (popularity.Snapshot, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	snapshot := make(popularity.Snapshot, len(s.popularity))
+	for key, tally := range s.popularity {
+		snapshot[key] = tally
+	}
+
+	return snapshot, nil
 }

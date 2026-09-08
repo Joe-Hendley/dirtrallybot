@@ -19,6 +19,7 @@ type Challenge struct {
 	Weather     weather.Model
 	Car         Car
 	Completions []Completion
+	Votes       []Vote
 }
 
 func FromChallenge(c challenge.Model) Challenge {
@@ -27,12 +28,18 @@ func FromChallenge(c challenge.Model) Challenge {
 		completions = append(completions, FromCompletion(completion))
 	}
 
+	votes := []Vote{}
+	for _, vote := range c.Votes() {
+		votes = append(votes, FromVote(vote))
+	}
+
 	return Challenge{
 		Version:     V1,
 		Stage:       FromStage(c.Stage()),
 		Weather:     c.Weather(),
 		Car:         FromCar(c.Car()),
 		Completions: completions,
+		Votes:       votes,
 	}
 }
 
@@ -42,11 +49,17 @@ func (dto Challenge) ToChallenge() challenge.Model {
 		completions = append(completions, c.ToCompletion())
 	}
 
+	votes := []challenge.Vote{}
+	for _, v := range dto.Votes {
+		votes = append(votes, v.ToVote())
+	}
+
 	return challenge.NewChallenge(
 		dto.Stage.ToStage(),
 		dto.Weather,
 		dto.Car.ToCar(),
 		completions,
+		votes,
 	)
 }
 
@@ -66,6 +79,24 @@ func FromCompletion(c challenge.Completion) Completion {
 
 func (dto Completion) ToCompletion() challenge.Completion {
 	return challenge.NewCompletion(dto.UserID, dto.Duration)
+}
+
+type Vote struct {
+	Version   int
+	UserID    string
+	Sentiment challenge.Sentiment
+}
+
+func FromVote(v challenge.Vote) Vote {
+	return Vote{
+		Version:   V1,
+		UserID:    v.UserID(),
+		Sentiment: v.Sentiment(),
+	}
+}
+
+func (dto Vote) ToVote() challenge.Vote {
+	return challenge.NewVote(dto.UserID, dto.Sentiment)
 }
 
 type Stage struct {

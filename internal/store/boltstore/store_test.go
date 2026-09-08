@@ -7,10 +7,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/drivetrain"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBoltStore(t *testing.T) {
@@ -117,6 +126,39 @@ func TestRegisterCompletion(t *testing.T) {
 			t.Errorf("got %v expect %v", completion, wantCompletions[idx])
 		}
 	}
+}
+
+func TestRegisterVotePersistsPopularity(t *testing.T) {
+	store := MustCreateStore(t)
+	ctx := context.Background()
+
+	c := challenge.NewChallenge(
+		stage.New("Sweet Lamb", location.WAL, stage.Long),
+		weather.WET,
+		car.New("Lancia Delta S4", class.GroupB4WD),
+		nil, nil,
+	)
+	require.NoError(t, store.PutChallenge(ctx, "c1", c))
+	require.NoError(t, store.RegisterVote(ctx, "c1", challenge.NewVote("alice", challenge.Up)))
+	require.NoError(t, store.RegisterVote(ctx, "c1", challenge.NewVote("bob", challenge.Down)))
+
+	snapshot, err := store.Popularity(ctx)
+	require.NoError(t, err)
+
+	// Keys survive the encode/decode round-trip, including the name-qualified ones.
+	assert.Equal(t, popularity.Tally{Up: 1, Down: 1},
+		snapshot[popularity.StageKey(stage.New("Sweet Lamb", location.WAL, stage.Long))])
+	assert.Equal(t, popularity.Tally{Up: 1, Down: 1},
+		snapshot[popularity.CarKey(car.New("Lancia Delta S4", class.GroupB4WD))])
+	assert.Equal(t, popularity.Tally{Up: 1, Down: 1},
+		snapshot[popularity.DrivetrainKey(drivetrain.AWD)])
+
+	// bob withdraws; his down is reversed everywhere.
+	require.NoError(t, store.RegisterVote(ctx, "c1", challenge.NewVote("bob", challenge.Down)))
+	snapshot, err = store.Popularity(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, popularity.Tally{Up: 1},
+		snapshot[popularity.LocationKey(location.WAL)])
 }
 
 func MustCreateStore(t *testing.T) *boltstore.Store {

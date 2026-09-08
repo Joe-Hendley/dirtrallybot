@@ -7,6 +7,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/completion"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/feedback"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
@@ -34,6 +35,8 @@ func InteractionMessageComponent(ctx context.Context, sessions challenge.Session
 		completion.HandleDisplayEntryModal(session, interaction)
 	case customID == challenge.DisplayTimesID:
 		completion.HandleDisplayTimes(ctx, store, session, interaction)
+	case customID == feedback.GoodID, customID == feedback.BadID:
+		feedback.HandleVote(ctx, store, session, interaction)
 	case strings.HasPrefix(customID, challenge.ChallengeID):
 		challenge.HandleChallengeBuilderInteraction(ctx, sessions, store, session, interaction)
 	}

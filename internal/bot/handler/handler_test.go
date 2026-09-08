@@ -8,6 +8,7 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/completion"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/feedback"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	challengeModel "github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
@@ -197,7 +198,7 @@ func TestSubmitCompletion(t *testing.T) {
 			expectedResponseCustomID = completion.ValidSubmissionID
 			expectedCompletion       = challengeModel.NewCompletion(userID, parsedTimestamp)
 
-			storedChallenge = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion})
+			storedChallenge = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion}, nil)
 		)
 		interaction := discordgo.InteractionCreate{
 			Interaction: &discordgo.Interaction{
@@ -268,7 +269,7 @@ func TestDisplayCompletion(t *testing.T) {
 
 		completionTime     = timestamp.Build(1, 23, 450)
 		expectedCompletion = challengeModel.NewCompletion(userID, completionTime)
-		storedChallenge    = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion})
+		storedChallenge    = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion}, nil)
 	)
 	interaction := discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
@@ -312,4 +313,57 @@ func TestDisplayCompletion(t *testing.T) {
 		}
 	}
 
+}
+
+// When we receive a message component interaction from a feedback button,
+// we record the vote against the challenge and acknowledge it privately.
+func TestFeedbackVote(t *testing.T) {
+	var (
+		expectedOptions []discordgo.RequestOption
+
+		userID      = "someUserID"
+		challengeID = "someMessageID"
+	)
+
+	testData := []struct {
+		title     string
+		customID  string
+		sentiment challengeModel.Sentiment
+	}{
+		{title: "thumbs up", customID: feedback.GoodID, sentiment: challengeModel.Up},
+		{title: "thumbs down", customID: feedback.BadID, sentiment: challengeModel.Down},
+	}
+
+	for _, testCase := range testData {
+		t.Run(testCase.title, func(t *testing.T) {
+			interaction := discordgo.InteractionCreate{
+				Interaction: &discordgo.Interaction{
+					Type:    discordgo.InteractionMessageComponent,
+					Data:    discordgo.MessageComponentInteractionData{CustomID: testCase.customID},
+					Member:  &discordgo.Member{User: &discordgo.User{ID: userID}},
+					Message: &discordgo.Message{ID: challengeID},
+				},
+			}
+
+			store := new(storeMock)
+			store.On("RegisterVote", challengeID, challengeModel.NewVote(userID, testCase.sentiment)).Return(nil)
+
+			session := new(sessionMock)
+			session.On("InteractionRespond", interaction.Interaction, mock.AnythingOfType("*discordgo.InteractionResponse"), expectedOptions).Return(nil)
+
+			handler.InteractionMessageComponent(context.Background(), buildersession.New(), store, session, &interaction)
+
+			store.AssertExpectations(t)
+			session.AssertExpectations(t)
+
+			if assert.NotNil(t, session.Calls[0].Arguments[1]) {
+				response := session.Calls[0].Arguments[1].(*discordgo.InteractionResponse)
+
+				assert.Equal(t, discordgo.InteractionResponseChannelMessageWithSource, response.Type)
+				if assert.NotNil(t, response.Data) {
+					assert.Equal(t, discordgo.MessageFlagsEphemeral, response.Data.Flags)
+				}
+			}
+		})
+	}
 }

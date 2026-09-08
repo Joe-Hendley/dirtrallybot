@@ -49,7 +49,7 @@ func TestStageConfig(t *testing.T) {
 func TestChallenge(t *testing.T) {
 	walStages := stage.AtLocation(location.WAL)
 	someCar := car.InClass(class.H3, game.DR2)[0]
-	c := challenge.NewChallenge(walStages[0], weather.DRY, someCar, nil)
+	c := challenge.NewChallenge(walStages[0], weather.DRY, someCar, nil, nil)
 
 	out := render.Challenge(c)
 
