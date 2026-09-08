@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
@@ -196,9 +197,9 @@ func TestSubmitCompletion(t *testing.T) {
 			parsedTimestamp = timestamp.Build(1, 23, 450)
 
 			expectedResponseCustomID = completion.ValidSubmissionID
-			expectedCompletion       = challengeModel.NewCompletion(userID, parsedTimestamp)
+			storedCompletion         = challengeModel.NewCompletionAt(userID, username, parsedTimestamp, time.Now().UTC())
 
-			storedChallenge = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{expectedCompletion}, nil)
+			storedChallenge = challengeModel.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challengeModel.Completion{storedCompletion}, nil)
 		)
 		interaction := discordgo.InteractionCreate{
 			Interaction: &discordgo.Interaction{
@@ -221,7 +222,12 @@ func TestSubmitCompletion(t *testing.T) {
 		}
 
 		store := new(storeMock)
-		store.On("RegisterCompletion", challengeID, expectedCompletion).Return(nil)
+		store.On("RegisterCompletion", challengeID, mock.MatchedBy(func(c challengeModel.Completion) bool {
+			return c.UserID() == userID &&
+				c.DisplayName() == username &&
+				c.Duration() == parsedTimestamp &&
+				!c.SubmittedAt().IsZero()
+		})).Return(nil)
 		store.On("GetChallenge", challengeID).Return(storedChallenge, nil)
 
 		session := new(sessionMock)
@@ -236,8 +242,10 @@ func TestSubmitCompletion(t *testing.T) {
 		store.AssertExpectations(t)
 		session.AssertExpectations(t)
 
-		if assert.NotNil(t, session.Calls[0].Arguments[1]) {
-			response := session.Calls[0].Arguments[1].(*discordgo.InteractionResponse)
+		// Calls: [0] GuildMember (display-name lookup), [1] InteractionRespond,
+		// [2] ChannelMessageEditComplex (top-three update).
+		if assert.NotNil(t, session.Calls[1].Arguments[1]) {
+			response := session.Calls[1].Arguments[1].(*discordgo.InteractionResponse)
 
 			assert.Equal(t, discordgo.InteractionResponseChannelMessageWithSource, response.Type)
 			if assert.NotNil(t, response.Data) {
