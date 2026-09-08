@@ -44,6 +44,26 @@ func TestLoadReadsEnvFile(t *testing.T) {
 	assert.Equal(t, "localhost:8080", cfg.WebAddr)
 }
 
+func TestLoadDefaultsBoltPath(t *testing.T) {
+	writeEnvFile(t)
+	require.NoError(t, os.Unsetenv("DBPATH"))
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "rallybot.db", cfg.BoltPath)
+}
+
+func TestLoadReadsBoltPathFromEnv(t *testing.T) {
+	writeEnvFile(t)
+	t.Setenv("DBPATH", "/data/rallybot.db")
+
+	cfg, err := config.Load()
+
+	require.NoError(t, err)
+	assert.Equal(t, "/data/rallybot.db", cfg.BoltPath)
+}
+
 func TestLoadReadsWebAddrFromEnv(t *testing.T) {
 	writeEnvFile(t)
 	t.Setenv("WEBADDR", "127.0.0.1:9000")

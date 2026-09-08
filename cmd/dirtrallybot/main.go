@@ -32,6 +32,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	defer func() {
+		if err := store.Close(); err != nil {
+			slog.Error("closing store", "err", err)
+		}
+	}()
+
 	session, err := discordgo.New("Bot " + cfg.Token)
 	if err != nil {
 		slog.Error("creating session", "err", err)

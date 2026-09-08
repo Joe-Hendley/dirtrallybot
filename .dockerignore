@@ -1,0 +1,13 @@
+.git
+.gitignore
+.github
+.golangci.yaml
+Makefile
+README.md
+LICENSE
+docs
+bin
+
+# Never bake local state or secrets into the build context.
+*.db
+*.env

@@ -1,0 +1,21 @@
+services:
+  dirtrallybot:
+    build: .
+    image: dirtrallybot
+    restart: unless-stopped
+    # Real configuration comes from a .env file in this directory (same keys as
+    # default.env). These override the empty .env baked into the image.
+    env_file:
+      - .env
+    environment:
+      # Bind the challenge viewer to all interfaces in the container so the
+      # published port below reaches it. Set to "off" to disable the viewer.
+      WEBADDR: ":8080"
+    ports:
+      - "8080:8080"
+    volumes:
+      # Persists the bbolt database (DBPATH, /data/rallybot.db) across restarts.
+      - rallybot-data:/data
+
+volumes:
+  rallybot-data:

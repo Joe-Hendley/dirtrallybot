@@ -16,6 +16,9 @@ const (
 
 const defaultStore = BOLT
 
+// defaultBoltPath is the bbolt database file used when DBPATH is unset.
+const defaultBoltPath = "rallybot.db"
+
 // RandomiserType selects how a generated challenge's blanks are filled in.
 type RandomiserType string
 
@@ -37,9 +40,11 @@ const defaultRandomiser = RandomiserBiased
 const defaultWebAddr = "localhost:8080"
 
 type Config struct {
-	App          string
-	Token        string
-	Store        StoreType
+	App   string
+	Token string
+	Store StoreType
+	// BoltPath is the path to the bbolt database file.
+	BoltPath     string
 	Randomiser   RandomiserType
 	TestServerID string
 	// WebAddr is the listen address for the local challenge viewer, or "" when
@@ -64,6 +69,7 @@ func Load() (Config, error) {
 		App:          os.Getenv("APP"),
 		Token:        os.Getenv("TOKEN"),
 		Store:        defaultStore,
+		BoltPath:     boltPathFromEnv(),
 		Randomiser:   randomiser,
 		TestServerID: os.Getenv("TESTSERVER"),
 		WebAddr:      webAddrFromEnv(),
@@ -81,6 +87,14 @@ func webAddrFromEnv() string {
 	default:
 		return addr
 	}
+}
+
+// boltPathFromEnv reads the DBPATH key, defaulting when unset.
+func boltPathFromEnv() string {
+	if path := os.Getenv("DBPATH"); path != "" {
+		return path
+	}
+	return defaultBoltPath
 }
 
 // randomiserFromEnv reads the RANDOMISER key, defaulting when unset and

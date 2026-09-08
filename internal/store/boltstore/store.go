@@ -33,7 +33,8 @@ type Store struct {
 	db *bolt.DB
 }
 
-// "rallybot.db"
+// New opens the bbolt database at filename, creating the file and the required
+// buckets if they do not already exist.
 func New(filename string) (*Store, error) {
 	db, err := bolt.Open(filename, 0600, nil)
 	if err != nil {
@@ -59,6 +60,7 @@ func New(filename string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
+// Close releases the file lock and flushes the bbolt database.
 func (s *Store) Close() error {
 	return s.db.Close()
 }
