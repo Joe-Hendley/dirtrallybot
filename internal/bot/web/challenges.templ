@@ -12,8 +12,13 @@ templ page(title string) {
 			<script src="/htmx.min.js"></script>
 			<style>
 				body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; color: #1a1a1a; max-width: 60rem; }
+				nav { margin: 0 0 1.5rem; display: flex; gap: 1rem; }
+				nav a { color: #444; text-decoration: none; }
+				nav a:hover { text-decoration: underline; }
 				h1 { margin: 0 0 0.25rem; }
+				h2 { margin: 1.5rem 0 0.5rem; font-size: 1.1rem; }
 				p.count { margin: 0 0 1.5rem; color: #666; }
+				section.feedback table { margin-bottom: 0.5rem; }
 				p.empty { color: #666; }
 				article.challenge { border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
 				.head { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: baseline; }
@@ -35,6 +40,10 @@ templ page(title string) {
 			</style>
 		</head>
 		<body>
+			<nav>
+				<a href="/">Challenges</a>
+				<a href="/feedback">Feedback</a>
+			</nav>
 			{ children... }
 		</body>
 	</html>
@@ -93,6 +102,46 @@ templ completionsPanel(v completionsView) {
 			</table>
 		}
 	</div>
+}
+
+templ feedbackPage(tables []feedbackTable) {
+	@page("Feedback") {
+		<h1>Feedback</h1>
+		<p class="count">{ feedbackSummary(tables) }</p>
+		if len(tables) == 0 {
+			<p class="empty">No feedback recorded yet.</p>
+		} else {
+			for _, table := range tables {
+				@feedbackSection(table)
+			}
+		}
+	}
+}
+
+templ feedbackSection(t feedbackTable) {
+	<section class="feedback">
+		<h2>{ t.Kind }</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>{ t.Kind }</th>
+					<th>👍</th>
+					<th>👎</th>
+					<th>Net</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range t.Rows {
+					<tr>
+						<td>{ row.Name }</td>
+						<td class="num">{ strconv.Itoa(row.Up) }</td>
+						<td class="num">{ strconv.Itoa(row.Down) }</td>
+						<td class="num">{ signed(row.Net) }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</section>
 }
 
 templ sortableHeader(v completionsView, column, label string) {

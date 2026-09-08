@@ -105,6 +105,41 @@ func TestCompletionsFragmentUnknownChallenge(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, response.StatusCode)
 }
 
+func TestFeedbackPageWithNoVotes(t *testing.T) {
+	body := getPage(t, memorystore.New(), "/feedback")
+
+	assert.Contains(t, body, "No feedback recorded yet.")
+	assert.Contains(t, body, "0 items with feedback")
+}
+
+func TestFeedbackPageListsTalliesByKind(t *testing.T) {
+	ctx := context.Background()
+	store := memorystore.New()
+
+	require.NoError(t, store.PutChallenge(ctx, challengeID, challenge.NewChallenge(
+		stage.New("Hamra", location.SWE, stage.Short),
+		weather.SNOW,
+		car.New("Peugeot 205 GTI", class.H2FWD),
+		nil, nil,
+	)))
+
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("alice", challenge.Up)))
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("bob", challenge.Up)))
+	require.NoError(t, store.RegisterVote(ctx, challengeID, challenge.NewVote("carol", challenge.Down)))
+
+	body := getPage(t, store, "/feedback")
+
+	assert.Contains(t, body, "7 items with feedback")
+	assert.Contains(t, body, "Sweden » Hamra")
+	assert.Contains(t, body, "Peugeot 205 GTI (H2 (FWD))")
+	assert.Contains(t, body, "Front Wheel Drive")
+	// Two thumbs up, one thumbs down nets out at +1.
+	assert.Contains(t, body, "+1")
+
+	// Tables are ordered where-first: Location before Car.
+	assert.Less(t, strings.Index(body, "<h2>Location</h2>"), strings.Index(body, "<h2>Car</h2>"))
+}
+
 func TestServesHTMX(t *testing.T) {
 	server := httptest.NewServer(web.Handler(memorystore.New()))
 	t.Cleanup(server.Close)

@@ -22,6 +22,7 @@ func Handler(store port.Store) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", handleChallenges(store))
 	mux.HandleFunc("GET /challenges/{id}/completions", handleCompletions(store))
+	mux.HandleFunc("GET /feedback", handleFeedback(store))
 	mux.HandleFunc("GET /htmx.min.js", handleHTMX)
 	return mux
 }
@@ -90,6 +91,22 @@ func handleCompletions(store port.Store) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := completionsPanel(view).Render(r.Context(), w); err != nil {
 			slog.Error("rendering completions panel", "challenge_id", challengeID, "err", err)
+		}
+	}
+}
+
+func handleFeedback(store port.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		snapshot, err := store.Popularity(r.Context())
+		if err != nil {
+			slog.Error("loading popularity for viewer", "err", err)
+			http.Error(w, "could not load feedback", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := feedbackPage(feedbackTables(snapshot)).Render(r.Context(), w); err != nil {
+			slog.Error("rendering feedback viewer", "err", err)
 		}
 	}
 }

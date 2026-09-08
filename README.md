@@ -33,6 +33,11 @@ or submission date. Sorting is driven by [htmx](https://htmx.org), vendored at
 requests. Completions recorded before the bot stored submitter names and
 submission times show a dash in those columns.
 
+A `/feedback` page shows the running 👍 / 👎 tally that biases generation, one
+table per item type (location, stage, distance, weather, class, car,
+drivetrain), each ordered by net score. Only items that have been voted on
+appear.
+
 ## Configuration
 
 Configuration is read from a `.env` file in the working directory (the process

@@ -60,3 +60,55 @@ func TestKeysFor(t *testing.T) {
 		popularity.DrivetrainKey(drivetrain.AWD),
 	}, popularity.KeysFor(c))
 }
+
+func TestKeyLabel(t *testing.T) {
+	tests := map[string]struct {
+		key  popularity.Key
+		want string
+	}{
+		"stage is qualified by location": {
+			key:  popularity.StageKey(stage.New("Sweet Lamb", location.WAL, stage.Long)),
+			want: "Wales » Sweet Lamb",
+		},
+		"car is qualified by class": {
+			key:  popularity.CarKey(car.New("Lancia Delta S4", class.GroupB4WD)),
+			want: "Lancia Delta S4 (Group B (4WD))",
+		},
+		"location": {
+			key:  popularity.LocationKey(location.SWE),
+			want: "Sweden",
+		},
+		"distance": {
+			key:  popularity.DistanceKey(stage.Long),
+			want: "8 Sector",
+		},
+		"weather": {
+			key:  popularity.WeatherKey(weather.SNOW),
+			want: "Snow",
+		},
+		"class": {
+			key:  popularity.ClassKey(class.H2FWD),
+			want: "H2 (FWD)",
+		},
+		"drivetrain": {
+			key:  popularity.DrivetrainKey(drivetrain.RWD),
+			want: "Rear Wheel Drive",
+		},
+		"unknown kind falls back to the raw ID": {
+			key:  popularity.Key{Kind: 0, ID: "raw"},
+			want: "raw",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.key.Label())
+		})
+	}
+}
+
+func TestKindString(t *testing.T) {
+	assert.Equal(t, "Stage", popularity.KindStage.String())
+	assert.Equal(t, "Drivetrain", popularity.KindDrivetrain.String())
+	assert.Equal(t, "invalid kind", popularity.Kind(0).String())
+}
