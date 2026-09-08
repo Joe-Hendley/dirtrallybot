@@ -31,12 +31,20 @@ const (
 
 const defaultRandomiser = RandomiserBiased
 
+// defaultWebAddr is where the local challenge viewer listens when WEBADDR is
+// unset - loopback only. Set WEBADDR to ":8080" to expose it on the network, or
+// to "off" to disable the viewer.
+const defaultWebAddr = "localhost:8080"
+
 type Config struct {
 	App          string
 	Token        string
 	Store        StoreType
 	Randomiser   RandomiserType
 	TestServerID string
+	// WebAddr is the listen address for the local challenge viewer, or "" when
+	// it is disabled.
+	WebAddr string
 }
 
 // Load reads configuration from a .env file in the working directory, with the
@@ -58,7 +66,21 @@ func Load() (Config, error) {
 		Store:        defaultStore,
 		Randomiser:   randomiser,
 		TestServerID: os.Getenv("TESTSERVER"),
+		WebAddr:      webAddrFromEnv(),
 	}, nil
+}
+
+// webAddrFromEnv reads the WEBADDR key, defaulting when unset and treating "off"
+// as a request to disable the viewer.
+func webAddrFromEnv() string {
+	switch addr := os.Getenv("WEBADDR"); addr {
+	case "":
+		return defaultWebAddr
+	case "off":
+		return ""
+	default:
+		return addr
+	}
 }
 
 // randomiserFromEnv reads the RANDOMISER key, defaulting when unset and

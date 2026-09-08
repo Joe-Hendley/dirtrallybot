@@ -50,6 +50,12 @@ func main() {
 		}
 	}()
 
+	go func() {
+		if err := rallyBot.ServeWeb(); err != nil {
+			slog.Error("challenge viewer stopped", "err", err)
+		}
+	}()
+
 	if err := session.Open(); err != nil {
 		slog.Error("opening connection", "err", err)
 		os.Exit(1)

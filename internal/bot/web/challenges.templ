@@ -1,0 +1,113 @@
+package web
+
+import "strconv"
+
+templ page(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title }</title>
+			<script src="/htmx.min.js"></script>
+			<style>
+				body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; color: #1a1a1a; max-width: 60rem; }
+				h1 { margin: 0 0 0.25rem; }
+				p.count { margin: 0 0 1.5rem; color: #666; }
+				p.empty { color: #666; }
+				article.challenge { border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
+				.head { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: baseline; }
+				.head .date { color: #666; font-variant-numeric: tabular-nums; white-space: nowrap; }
+				.head .track { font-weight: 600; }
+				.head .meta { color: #666; }
+				details { margin-top: 0.5rem; }
+				summary { cursor: pointer; color: #444; }
+				.completions { margin-top: 0.5rem; }
+				table { border-collapse: collapse; width: 100%; }
+				th, td { text-align: left; padding: 0.4rem 0.75rem; border-bottom: 1px solid #ececec; }
+				td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+				thead th { border-bottom: 2px solid #ccc; padding: 0; }
+				thead th:first-child { padding: 0.4rem 0.75rem; font-weight: 600; }
+				th button { font: inherit; font-weight: 600; background: none; border: 0; padding: 0.4rem 0.75rem; cursor: pointer; color: inherit; width: 100%; text-align: left; }
+				th button:hover { background: #f6f6f6; }
+				th.active button { color: #1a1a1a; }
+				th:not(.active) button { color: #888; }
+			</style>
+		</head>
+		<body>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ challengesPage(challenges []challengeView) {
+	@page("Challenges") {
+		<h1>Challenges</h1>
+		<p class="count">{ strconv.Itoa(len(challenges)) } stored</p>
+		if len(challenges) == 0 {
+			<p class="empty">No challenges stored yet.</p>
+		} else {
+			for _, challenge := range challenges {
+				@challengeArticle(challenge)
+			}
+		}
+	}
+}
+
+templ challengeArticle(c challengeView) {
+	<article class="challenge">
+		<div class="head">
+			<span class="date">{ c.Date }</span>
+			<span class="track">{ c.Track }</span>
+			<span class="meta">{ c.Distance } · { c.Weather } · { c.Car } ({ c.Class })</span>
+		</div>
+		<details>
+			<summary>{ strconv.Itoa(c.Completions.Count()) } { completionsLabel(c.Completions.Count()) }</summary>
+			@completionsPanel(c.Completions)
+		</details>
+	</article>
+}
+
+templ completionsPanel(v completionsView) {
+	<div id={ "completions-" + v.ChallengeID } class="completions">
+		if v.Count() == 0 {
+			<p class="empty">No completions recorded.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Driver</th>
+						@sortableHeader(v, sortByTime, "Time")
+						@sortableHeader(v, sortBySubmitted, "Submitted")
+					</tr>
+				</thead>
+				<tbody>
+					for _, row := range v.Rows {
+						<tr>
+							<td>{ row.Name }</td>
+							<td class="num">{ row.Time }</td>
+							<td class="date">{ row.Submitted }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+templ sortableHeader(v completionsView, column, label string) {
+	<th
+		if v.active(column) {
+			class="active"
+		}
+	>
+		<button
+			type="button"
+			hx-get={ "/challenges/" + v.ChallengeID + "/completions?sort=" + column + "&dir=" + v.nextDir(column) }
+			hx-target={ "#completions-" + v.ChallengeID }
+			hx-swap="outerHTML"
+		>
+			{ label + v.arrow(column) }
+		</button>
+	</th>
+}

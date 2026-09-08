@@ -103,6 +103,28 @@ func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge
 	return dto.ToChallenge(), err
 }
 
+func (s *Store) ListChallenges(ctx context.Context) (map[string]challenge.Model, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	challenges := map[string]challenge.Model{}
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte(ChallengeBucketID)).ForEach(func(k, v []byte) error {
+			stored := dto.Challenge{}
+			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(&stored); err != nil {
+				return fmt.Errorf("decoding challenge %s: %w", k, err)
+			}
+
+			challenges[string(k)] = stored.ToChallenge()
+			return nil
+		})
+	})
+
+	return challenges, err
+}
+
 func (s *Store) DeleteChallenge(ctx context.Context, challengeID string) error {
 	if err := ctx.Err(); err != nil {
 		return err

@@ -89,6 +89,46 @@ func TestPutAndGet(t *testing.T) {
 	}
 }
 
+func TestListChallenges(t *testing.T) {
+	store := MustCreateStore(t)
+	ctx := context.Background()
+
+	empty, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, empty)
+
+	r := randomiser.NewDeterministic(game.DR2)
+	want := map[string]challenge.Model{
+		"c1": challenge.NewRandomChallenge(challenge.Config{}, r),
+		"c2": challenge.NewRandomChallenge(challenge.Config{}, r),
+		"c3": challenge.NewRandomChallenge(challenge.Config{}, r),
+	}
+
+	for id, c := range want {
+		require.NoError(t, store.PutChallenge(ctx, id, c))
+	}
+
+	got, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func TestRegisterCompletionPersistsNameAndSubmissionTime(t *testing.T) {
+	store := MustCreateStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, store.PutChallenge(ctx, "c1", challenge.Model{}))
+
+	want := challenge.NewCompletionAt("alice-id", "Alice", 90*time.Second,
+		time.Date(2024, 3, 4, 5, 6, 7, 0, time.UTC))
+	require.NoError(t, store.RegisterCompletion(ctx, "c1", want))
+
+	got, err := store.GetChallenge(ctx, "c1")
+	require.NoError(t, err)
+	require.Len(t, got.Completions(), 1)
+	assert.Equal(t, want, got.Completions()[0])
+}
+
 func TestRegisterCompletion(t *testing.T) {
 	store := MustCreateStore(t)
 	challengeID := "123"

@@ -8,10 +8,12 @@ import (
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/car"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/class"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/location"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/stage"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
+	"github.com/Joe-Hendley/dirtrallybot/internal/randomiser"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/memorystore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,8 +80,53 @@ func TestCancelledContextIsRefused(t *testing.T) {
 	require.ErrorIs(t, store.RegisterCompletion(ctx, "123", challenge.Completion{}), context.Canceled)
 	require.ErrorIs(t, store.RegisterVote(ctx, "123", challenge.Vote{}), context.Canceled)
 
+	_, err = store.ListChallenges(ctx)
+	require.ErrorIs(t, err, context.Canceled)
+
 	_, err = store.Popularity(ctx)
 	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestListChallenges(t *testing.T) {
+	ctx := context.Background()
+	store := memorystore.New()
+
+	empty, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, empty)
+
+	r := randomiser.NewDeterministic(game.DR2)
+	want := map[string]challenge.Model{
+		"c1": challenge.NewRandomChallenge(challenge.Config{}, r),
+		"c2": challenge.NewRandomChallenge(challenge.Config{}, r),
+	}
+	for id, c := range want {
+		require.NoError(t, store.PutChallenge(ctx, id, c))
+	}
+
+	got, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func TestListChallengesIsIsolatedFromStoredState(t *testing.T) {
+	ctx := context.Background()
+	store := memorystore.New()
+
+	stored := challenge.NewChallenge(stage.Model{}, weather.DRY, car.Model{}, []challenge.Completion{
+		challenge.NewCompletion("alice", time.Minute),
+	}, nil)
+	require.NoError(t, store.PutChallenge(ctx, "c1", stored))
+
+	listed, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	got := listed["c1"]
+	got.RegisterCompletion(challenge.NewCompletion("mallory", time.Hour))
+
+	again, err := store.ListChallenges(ctx)
+	require.NoError(t, err)
+	reread := again["c1"]
+	require.Len(t, reread.Completions(), 1)
 }
 
 func TestRegisterVote(t *testing.T) {
