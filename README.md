@@ -17,15 +17,25 @@ channel with buttons to enter a time (⏱️) and to list everyone's times (📋
 ## Configuration
 
 Configuration is read from a `.env` file in the working directory (the process
-environment takes precedence). A missing `.env` is a fatal error.
+environment takes precedence). A missing `.env` is a fatal error. Copy
+[`default.env`](default.env) to `.env` and fill it in:
 
-| Key          | Description                                                        |
-| ------------ | ----------------------------------------------------------------- |
-| `token`      | the bot token                                                     |
-| `app`        | the application ID, used to register the slash commands           |
-| `testserver` | guild ID where the `!cars` / `!stages` debug commands are allowed |
+```
+cp default.env .env
+```
+
+| Key          | Description                                                                       |
+| ------------ | -------------------------------------------------------------------------------- |
+| `TOKEN`      | the bot token                                                                     |
+| `APP`        | the application ID, used to register the slash commands                           |
+| `TESTSERVER` | guild ID where the `!cars` / `!stages` debug commands are allowed                 |
+| `RANDOMISER` | `biased` (default), `random`, or `deterministic` — how challenges are filled in   |
 
 Challenges are stored in a bbolt file (`rallybot.db`) by default.
+
+`biased` leans generation towards stages, cars and weather that have had good
+👍 / 👎 feedback; `random` picks uniformly; `deterministic` replays a fixed
+sequence (for debugging).
 
 ## Running
 

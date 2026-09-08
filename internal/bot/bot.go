@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
@@ -35,6 +36,8 @@ func New(ctx context.Context, cfg config.Config, store port.Store, session *disc
 		sessions: buildersession.New(),
 	}
 
+	challenge.SetGenerator(generatorFor(cfg.Randomiser))
+
 	session.AddHandler(bot.HandleReady)
 	session.AddHandler(bot.HandleMessageCreate)
 	session.AddHandler(bot.HandleInteractionCreate)
@@ -46,6 +49,19 @@ func New(ctx context.Context, cfg config.Config, store port.Store, session *disc
 	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
 
 	return bot, nil
+}
+
+// generatorFor maps the configured randomiser choice to its generator, defaulting
+// to the popularity-biased one.
+func generatorFor(kind config.RandomiserType) challenge.Generator {
+	switch kind {
+	case config.RandomiserDeterministic:
+		return challenge.DeterministicGenerator
+	case config.RandomiserRandom:
+		return challenge.RandomGenerator
+	default:
+		return challenge.BiasedGenerator
+	}
 }
 
 func (bot *Bot) Shutdown() error {

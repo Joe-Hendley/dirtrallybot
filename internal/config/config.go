@@ -16,10 +16,26 @@ const (
 
 const defaultStore = BOLT
 
+// RandomiserType selects how a generated challenge's blanks are filled in.
+type RandomiserType string
+
+const (
+	// RandomiserDeterministic replays a fixed sequence - reproducible across
+	// restarts, mainly useful for debugging.
+	RandomiserDeterministic RandomiserType = "deterministic"
+	// RandomiserRandom picks uniformly at random.
+	RandomiserRandom RandomiserType = "random"
+	// RandomiserBiased leans towards items with good feedback.
+	RandomiserBiased RandomiserType = "biased"
+)
+
+const defaultRandomiser = RandomiserBiased
+
 type Config struct {
 	App          string
 	Token        string
 	Store        StoreType
+	Randomiser   RandomiserType
 	TestServerID string
 }
 
@@ -31,10 +47,29 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("loading .env file: %w", err)
 	}
 
+	randomiser, err := randomiserFromEnv()
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{
-		App:          os.Getenv("app"),
-		Token:        os.Getenv("token"),
+		App:          os.Getenv("APP"),
+		Token:        os.Getenv("TOKEN"),
 		Store:        defaultStore,
-		TestServerID: os.Getenv("testserver"),
+		Randomiser:   randomiser,
+		TestServerID: os.Getenv("TESTSERVER"),
 	}, nil
+}
+
+// randomiserFromEnv reads the RANDOMISER key, defaulting when unset and
+// rejecting an unrecognised value rather than silently falling back.
+func randomiserFromEnv() (RandomiserType, error) {
+	switch value := RandomiserType(os.Getenv("RANDOMISER")); value {
+	case "":
+		return defaultRandomiser, nil
+	case RandomiserDeterministic, RandomiserRandom, RandomiserBiased:
+		return value, nil
+	default:
+		return "", fmt.Errorf("invalid randomiser %q", value)
+	}
 }

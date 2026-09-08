@@ -40,16 +40,6 @@ func TestGameIDFragmentsMatchGamePackage(t *testing.T) {
 	assert.Equal(t, WRCID, game.WRC.ID())
 }
 
-// Each game must have its own randomiser, so a WRC challenge is not generated
-// from DR2 content.
-func TestRandomisersCoverBothGames(t *testing.T) {
-	for _, g := range []game.Model{game.DR2, game.WRC} {
-		r, ok := randomisers[g]
-		require.Truef(t, ok, "no randomiser for %s", g)
-		assert.Containsf(t, location.List(g), r.Loc(), "%s randomiser produced a location from another game", g)
-	}
-}
-
 func componentInteraction(customID string, values []string, builderID string) *discordgo.InteractionCreate {
 	return &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{

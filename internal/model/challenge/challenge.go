@@ -29,14 +29,16 @@ type Model struct {
 	weather     weather.Model
 	car         car.Model
 	completions []Completion
+	votes       []Vote
 }
 
-func NewChallenge(s stage.Model, w weather.Model, car car.Model, completions []Completion) Model {
+func NewChallenge(s stage.Model, w weather.Model, car car.Model, completions []Completion, votes []Vote) Model {
 	return Model{
 		stage:       s,
 		weather:     w,
 		car:         car,
 		completions: completions,
+		votes:       votes,
 	}
 }
 
@@ -83,6 +85,7 @@ func NewRandomChallenge(c Config, r Randomiser) Model {
 	challenge.car = r.Car()
 
 	challenge.completions = []Completion{}
+	challenge.votes = []Vote{}
 
 	return challenge
 }
@@ -179,4 +182,82 @@ func (c Completion) UserID() string {
 
 func (c Completion) Duration() time.Duration {
 	return c.duration
+}
+
+// Sentiment is a thumbs-up or thumbs-down on a challenge. The zero value is
+// invalid so an unset Vote is never mistaken for feedback.
+type Sentiment int
+
+const (
+	Up Sentiment = iota + 1
+	Down
+)
+
+// Vote is one user's feedback on a challenge. A user has at most one vote per
+// challenge.
+type Vote struct {
+	userID    string
+	sentiment Sentiment
+}
+
+func NewVote(userID string, sentiment Sentiment) Vote {
+	return Vote{
+		userID:    userID,
+		sentiment: sentiment,
+	}
+}
+
+func (v Vote) UserID() string {
+	return v.userID
+}
+
+func (v Vote) Sentiment() Sentiment {
+	return v.sentiment
+}
+
+// Votes returns the current votes on the challenge, one per user.
+func (m *Model) Votes() []Vote {
+	return m.votes
+}
+
+// VoteFor returns the user's current vote, or false if they have not voted.
+func (m *Model) VoteFor(userID string) (Vote, bool) {
+	for _, v := range m.votes {
+		if v.userID == userID {
+			return v, true
+		}
+	}
+	return Vote{}, false
+}
+
+// SetVote records a user's vote, replacing any existing one from that user.
+func (m *Model) SetVote(vote Vote) {
+	for i, v := range m.votes {
+		if v.userID == vote.userID {
+			m.votes[i] = vote
+			return
+		}
+	}
+	m.votes = append(m.votes, vote)
+}
+
+// WithdrawVote removes a user's vote, if any.
+func (m *Model) WithdrawVote(userID string) {
+	m.votes = slices.DeleteFunc(m.votes, func(v Vote) bool {
+		return v.userID == userID
+	})
+}
+
+// Score is the net feedback on the challenge: thumbs up minus thumbs down.
+func (m *Model) Score() int {
+	score := 0
+	for _, v := range m.votes {
+		switch v.sentiment {
+		case Up:
+			score++
+		case Down:
+			score--
+		}
+	}
+	return score
 }

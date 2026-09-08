@@ -5,6 +5,7 @@ import (
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/popularity"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 	"github.com/stretchr/testify/mock"
@@ -68,4 +69,16 @@ func (sm *storeMock) PutChallenge(_ context.Context, challengeID string, challen
 func (sm *storeMock) RegisterCompletion(_ context.Context, challengeID string, completion challenge.Completion) error {
 	args := sm.Called(challengeID, completion)
 	return args.Error(0)
+}
+
+// RegisterVote implements port.Store.
+func (sm *storeMock) RegisterVote(_ context.Context, challengeID string, vote challenge.Vote) error {
+	args := sm.Called(challengeID, vote)
+	return args.Error(0)
+}
+
+// Popularity implements port.Store.
+func (sm *storeMock) Popularity(_ context.Context) (popularity.Snapshot, error) {
+	args := sm.Called()
+	return args.Get(0).(popularity.Snapshot), args.Error(1)
 }

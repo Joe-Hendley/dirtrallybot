@@ -76,9 +76,39 @@ func TestSortUser(t *testing.T) {
 	}
 }
 
+func TestVotes(t *testing.T) {
+	newChallenge := func() Model {
+		return NewChallenge(stage.Model{}, weather.DRY, car.Model{}, nil, nil)
+	}
+
+	t.Run("one vote per user, latest wins", func(t *testing.T) {
+		challenge := newChallenge()
+		challenge.SetVote(NewVote("alice", Up))
+		challenge.SetVote(NewVote("bob", Down))
+		challenge.SetVote(NewVote("alice", Down))
+
+		assert.Len(t, challenge.Votes(), 2)
+		got, ok := challenge.VoteFor("alice")
+		require.True(t, ok)
+		assert.Equal(t, Down, got.Sentiment())
+		assert.Equal(t, -2, challenge.Score())
+	})
+
+	t.Run("withdraw removes the user's vote", func(t *testing.T) {
+		challenge := newChallenge()
+		challenge.SetVote(NewVote("alice", Up))
+		challenge.SetVote(NewVote("bob", Up))
+		challenge.WithdrawVote("alice")
+
+		_, ok := challenge.VoteFor("alice")
+		assert.False(t, ok)
+		assert.Equal(t, 1, challenge.Score())
+	})
+}
+
 func TestTopThree(t *testing.T) {
 	newChallengeWithCompletions := func(completions []Completion) Model {
-		return NewChallenge(stage.Model{}, weather.DRY, car.Model{}, completions)
+		return NewChallenge(stage.Model{}, weather.DRY, car.Model{}, completions, nil)
 	}
 	t.Run("no completions -> empty array", func(t *testing.T) {
 		completions := []Completion{}
