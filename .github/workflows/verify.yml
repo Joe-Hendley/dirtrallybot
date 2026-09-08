@@ -1,0 +1,49 @@
+name: verify
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+  schedule:
+    # Catch newly disclosed vulnerabilities between commits.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  tidy:
+    name: go mod tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go mod tidy
+      - run: git diff --exit-code go.mod go.sum
+
+  generate:
+    name: templ generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: templ generate
+        run: |
+          version="$(go list -m -f '{{.Version}}' github.com/a-h/templ)"
+          go run "github.com/a-h/templ/cmd/templ@${version}" generate
+      - run: git diff --exit-code
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
