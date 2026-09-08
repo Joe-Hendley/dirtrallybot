@@ -1,6 +1,10 @@
 package drivetrain
 
-import "github.com/Joe-Hendley/dirtrallybot/internal/model/game"
+import (
+	"slices"
+
+	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
+)
 
 type Model int
 
@@ -11,32 +15,13 @@ const (
 	AWDHYBRID
 )
 
+var byGame = map[game.Model][]Model{
+	game.DR2: {FWD, AWD, RWD},
+	game.WRC: {FWD, AWD, AWDHYBRID, RWD},
+}
+
 func List(g game.Model) []Model {
-	switch g {
-	case game.DR2:
-		return listDR2()
-	case game.WRC:
-		return listWRC()
-	}
-	return []Model{}
-}
-
-func listDR2() []Model {
-	return []Model{
-		FWD,
-		AWD,
-		RWD,
-	}
-}
-
-func listWRC() []Model {
-	return []Model{
-		FWD,
-		AWD,
-		AWDHYBRID,
-		RWD,
-	}
-
+	return slices.Clone(byGame[g])
 }
 
 func (m Model) String() string {
@@ -52,23 +37,4 @@ func (m Model) String() string {
 	}
 
 	return "invalid drivetrain"
-}
-
-func (m Model) Emoji() string {
-	switch m {
-	case FWD:
-		return "🚗"
-	case AWD:
-		return "🚙"
-	case AWDHYBRID:
-		return "⚡"
-	case RWD:
-		return "🏎️"
-	}
-
-	return "invalid drivetrain"
-}
-
-func (m Model) FancyString() string {
-	return m.Emoji() + " " + m.String()
 }

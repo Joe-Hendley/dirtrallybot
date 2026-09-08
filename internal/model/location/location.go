@@ -1,6 +1,8 @@
 package location
 
 import (
+	"slices"
+
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/game"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/weather"
 )
@@ -44,18 +46,8 @@ const (
 	IBE // rally iberia
 )
 
-func List(g game.Model) []Model {
-	switch g {
-	case game.DR2:
-		return listDR2()
-	case game.WRC:
-		return listWRC()
-	}
-	return []Model{}
-}
-
-func listDR2() []Model {
-	return []Model{
+var byGame = map[game.Model][]Model{
+	game.DR2: {
 		ARG,
 		AUS,
 		FIN,
@@ -69,11 +61,8 @@ func listDR2() []Model {
 		SWE,
 		USA,
 		WAL,
-	}
-}
-
-func listWRC() []Model {
-	return []Model{
+	},
+	game.WRC: {
 		MCO_WRC,
 		SWE_WRC,
 		MEX,
@@ -92,7 +81,11 @@ func listWRC() []Model {
 		UUU,
 		SCA,
 		IBE,
-	}
+	},
+}
+
+func List(g game.Model) []Model {
+	return slices.Clone(byGame[g])
 }
 
 func (m Model) String() string {
@@ -237,77 +230,6 @@ func (m Model) DetailedString() string {
 	return "invalid location"
 }
 
-func (m Model) Flag() string {
-	switch m {
-	// DR2
-	case ARG:
-		return "🇦🇷"
-	case AUS:
-		return "🇦🇺"
-	case FIN:
-		return "🇫🇮"
-	case DEU:
-		return "🇩🇪"
-	case GRC:
-		return "🇬🇷"
-	case MCO:
-		return "🇲🇨"
-	case NZL:
-		return "🇳🇿"
-	case POL:
-		return "🇵🇱"
-	case SCO:
-		return "🏴󠁧󠁢󠁳󠁣󠁴󠁿"
-	case ESP:
-		return "🇪🇸"
-	case SWE:
-		return "🇸🇪"
-	case USA:
-		return "🇺🇸"
-	case WAL:
-		return "🏴󠁧󠁢󠁷󠁬󠁳󠁿"
-
-	// WRC
-	case MCO_WRC:
-		return "🇲🇨"
-	case SWE_WRC:
-		return "🇸🇪"
-	case MEX:
-		return "🇲🇽"
-	case HRV:
-		return "🇭🇷"
-	case PRT:
-		return "🇵🇹"
-	case ITA:
-		return "🇮🇹"
-	case KEN:
-		return "🇰🇪"
-	case EST:
-		return "🇪🇪"
-	case FIN_WRC:
-		return "🇫🇮"
-	case GRC_WRC:
-		return "🇬🇷"
-	case CHL:
-		return "🇨🇱"
-	case CER:
-		return "🇪🇺"
-	case JPN:
-		return "🇯🇵"
-	case MED:
-		return "🫒"
-	case PAC:
-		return "🗿"
-	case UUU:
-		return "🦘"
-	case SCA:
-		return "🌲"
-	case IBE:
-		return "🐮"
-	}
-	return "invalid location"
-}
-
 func (m Model) Weather() []weather.Model {
 	switch m {
 	case MCO:
@@ -316,147 +238,5 @@ func (m Model) Weather() []weather.Model {
 		return []weather.Model{weather.SNOW}
 	default:
 		return []weather.Model{weather.DRY, weather.WET}
-	}
-}
-
-type weatherStringMap = map[weather.Model]string
-type locationWeatherStringMap = map[Model]weatherStringMap
-
-const (
-	DAYCLEARDRY        = "☀️ **Daytime / Clear / Dry Surface**"
-	DAYCLOUDYWET       = "⛅💧 **Daytime / Cloudy / Wet Surface**"
-	DAYCLOUDYSNOW      = "⛅❄️ **Daytime / Cloudy / Snow**"
-	DAYHEAVYRAINWET    = "⛅🌧️ **Daytime / Heavy Rain / Wet Surface**"
-	DUSKCLOUDYWET      = "🌆☁️💧 **Dusk / Cloudy / Wet Surface**"
-	DUSKHEAVYRAINWET   = "🌆🌧️ **Dusk / Heavy Rain / Wet Surface**"
-	SUNSETCLOUDYWET    = "🌇☁️💧 **Sunset / Cloudy / Wet Surface**"
-	SUNSETHEAVYRAINWET = "🌇🌧️ **Sunset / Heavy Rain / Wet Surface**"
-)
-
-func WeatherStrings() locationWeatherStringMap {
-	return locationWeatherStringMap{
-		// DR2
-		ARG: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DUSKHEAVYRAINWET,
-		},
-		AUS: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		FIN: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DUSKCLOUDYWET,
-		},
-		DEU: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYHEAVYRAINWET,
-		},
-		GRC: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: SUNSETHEAVYRAINWET,
-		},
-		MCO: {
-			weather.DRY: DAYCLEARDRY,
-		},
-		NZL: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		POL: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: SUNSETCLOUDYWET,
-		},
-		SCO: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		ESP: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		SWE: {
-			weather.SNOW: DAYCLOUDYSNOW,
-		},
-		USA: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		WAL: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: SUNSETCLOUDYWET,
-		},
-
-		// WRC
-		MCO_WRC: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		SWE_WRC: {
-			weather.SNOW: DAYCLOUDYSNOW,
-		},
-		MEX: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		HRV: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		PRT: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		ITA: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		KEN: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		EST: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		FIN_WRC: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		GRC_WRC: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		CHL: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		CER: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		JPN: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		MED: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		PAC: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		UUU: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
-		SCA: {
-			weather.SNOW: DAYCLOUDYSNOW,
-		},
-		IBE: {
-			weather.DRY: DAYCLEARDRY,
-			weather.WET: DAYCLOUDYWET,
-		},
 	}
 }

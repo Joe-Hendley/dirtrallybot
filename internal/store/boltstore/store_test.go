@@ -1,6 +1,7 @@
 package boltstore_test
 
 import (
+	"context"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -17,22 +18,22 @@ func TestBoltStore(t *testing.T) {
 	myChallenge := challenge.Model{}
 	challengeID := "12345"
 
-	err := store.PutChallenge(challengeID, myChallenge)
+	err := store.PutChallenge(context.Background(), challengeID, myChallenge)
 	if err != nil {
 		t.Errorf("error putting challenge: %s", err)
 	}
 
-	_, err = store.GetChallenge(challengeID)
+	_, err = store.GetChallenge(context.Background(), challengeID)
 	if err != nil {
 		t.Errorf("error getting challenge: %s", err)
 	}
 
-	err = store.RegisterCompletion(challengeID, challenge.Completion{})
+	err = store.RegisterCompletion(context.Background(), challengeID, challenge.Completion{})
 	if err != nil {
 		t.Errorf("error adding completion: %s", err)
 	}
 
-	gotChallenge, err := store.GetChallenge(challengeID)
+	gotChallenge, err := store.GetChallenge(context.Background(), challengeID)
 	if err != nil {
 		t.Errorf("error getting challenge: %s", err)
 	}
@@ -44,7 +45,7 @@ func TestBoltStore(t *testing.T) {
 }
 
 func TestPutAndGet(t *testing.T) {
-	r := randomiser.NewSimple(game.DR2)
+	r := randomiser.NewDeterministic(game.DR2)
 	challengeIDs := []string{
 		"challenge1",
 		"challenge2",
@@ -60,14 +61,14 @@ func TestPutAndGet(t *testing.T) {
 	store := MustCreateStore(t)
 
 	for challengeID, challenge := range challenges {
-		err := store.PutChallenge(challengeID, challenge)
+		err := store.PutChallenge(context.Background(), challengeID, challenge)
 		if err != nil {
 			t.Errorf("error putting challenge: %s", err)
 		}
 	}
 
 	for _, challengeID := range challengeIDs {
-		got, err := store.GetChallenge(challengeID)
+		got, err := store.GetChallenge(context.Background(), challengeID)
 		if err != nil {
 			t.Errorf("error getting challenge: %s", err)
 		}
@@ -82,9 +83,9 @@ func TestPutAndGet(t *testing.T) {
 func TestRegisterCompletion(t *testing.T) {
 	store := MustCreateStore(t)
 	challengeID := "123"
-	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewSimple(game.DR2))
+	myChallenge := challenge.NewRandomChallenge(challenge.Config{}, randomiser.NewDeterministic(game.DR2))
 
-	err := store.PutChallenge(challengeID, myChallenge)
+	err := store.PutChallenge(context.Background(), challengeID, myChallenge)
 	if err != nil {
 		t.Errorf("error putting challenge: %s", err)
 	}
@@ -96,13 +97,13 @@ func TestRegisterCompletion(t *testing.T) {
 	}
 
 	for _, completion := range wantCompletions {
-		err = store.RegisterCompletion(challengeID, completion)
+		err = store.RegisterCompletion(context.Background(), challengeID, completion)
 		if err != nil {
 			t.Errorf("error registering completion: %s", err)
 		}
 	}
 
-	gotChallenge, err := store.GetChallenge(challengeID)
+	gotChallenge, err := store.GetChallenge(context.Background(), challengeID)
 	if err != nil {
 		t.Errorf("error getting challenge: %s", err)
 	}

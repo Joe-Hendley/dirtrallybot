@@ -1,16 +1,17 @@
 package completion
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"slices"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/discord"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
+	"github.com/Joe-Hendley/dirtrallybot/internal/bot/render"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/timestamp"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -25,12 +26,29 @@ const (
 	challengeIDIndex = 1
 	userIDIndex      = 2
 	customIDDelim    = "_"
+
+	genericErrorMessage = "☹️ something went wrong, please contact an administrator"
 )
+
+// respondEphemeral sends a private message back to whoever triggered the
+// interaction, logging if even that fails.
+func respondEphemeral(session discord.InteractionResponder, interaction *discordgo.InteractionCreate, content string) {
+	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		slog.Error("sending ephemeral response", "err", err)
+	}
+}
 
 func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *discordgo.InteractionCreate) {
 	customIDParts := []string{SubmitCompletionPrefix, "", ""}
 	customIDParts[challengeIDIndex] = interaction.Message.ID
-	customIDParts[userIDIndex] = interaction.Interaction.Member.User.ID
+	customIDParts[userIDIndex] = interaction.Member.User.ID
 
 	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
@@ -61,7 +79,7 @@ func HandleDisplayEntryModal(session discord.InteractionResponder, interaction *
 	}
 }
 
-func HandleSubmitModal(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleSubmitModal(ctx context.Context, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	if interaction.Type != discordgo.InteractionModalSubmit {
 		return
 	}
@@ -89,27 +107,17 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 		})
 
 		if respErr != nil {
-			log.Printf("error sending response to bad timestamp: %v\n", respErr)
+			slog.Error("responding to invalid timestamp", "err", respErr)
 		}
 		return
 	}
 
 	completion := challenge.NewCompletion(userID, parsed)
-	err = store.RegisterCompletion(challengeID, completion)
+	err = store.RegisterCompletion(ctx, challengeID, completion)
 
 	if err != nil {
-		slog.Error("submitting timestamp", "challenge-id", challengeID, "err", err)
-		respErr := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "☹️ an error occurred submitting your time, please contact an administrator",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-
-		if respErr != nil {
-			log.Printf("error sending response: %v\n", respErr)
-		}
+		slog.Error("registering completion", "challenge_id", challengeID, "err", err)
+		respondEphemeral(session, interaction, genericErrorMessage)
 		return
 	}
 
@@ -123,10 +131,10 @@ func HandleSubmitModal(store model.Store, session discord.Session, interaction *
 	})
 
 	if err != nil {
-		log.Printf("error sending response to valid timestamp: %v\n", err)
+		slog.Error("responding to valid timestamp", "err", err)
 	}
 
-	updateTopThree(store, session, interaction.GuildID, interaction.ChannelID, challengeID)
+	updateTopThree(ctx, store, session, interaction.GuildID, interaction.ChannelID, challengeID)
 }
 
 func medal(place int) string {
@@ -142,11 +150,11 @@ func medal(place int) string {
 	}
 }
 
-func updateTopThree(store model.Store, session discord.Session, guildID, channelID, messageID string) {
+func updateTopThree(ctx context.Context, store port.Store, session discord.Session, guildID, channelID, messageID string) {
 	challengeID := messageID
-	challenge, err := store.GetChallenge(challengeID)
+	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
-		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
+		slog.Warn("getting challenge", "challenge_id", challengeID, "err", err)
 		return
 	}
 
@@ -164,20 +172,21 @@ func updateTopThree(store model.Store, session discord.Session, guildID, channel
 
 	topThreeString := strings.Join(lines, "\n")
 
-	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(challenge.FancyString() + "\n" + topThreeString)
+	edited := discordgo.NewMessageEdit(channelID, messageID).SetContent(render.Challenge(challenge) + "\n" + topThreeString)
 
 	_, err = session.ChannelMessageEditComplex(edited)
 	if err != nil {
-		slog.Error("editing challenge id: %s : %v\n", challengeID, err)
+		slog.Error("editing challenge message", "challenge_id", challengeID, "err", err)
 		return
 	}
 }
 
-func HandleDisplayTimes(store model.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
+func HandleDisplayTimes(ctx context.Context, store port.Store, session discord.Session, interaction *discordgo.InteractionCreate) {
 	challengeID := interaction.Message.ID
-	challenge, err := store.GetChallenge(challengeID)
+	challenge, err := store.GetChallenge(ctx, challengeID)
 	if err != nil {
-		slog.Warn("getting challenge", "challengeID", challengeID, "err", err)
+		slog.Warn("getting challenge", "challenge_id", challengeID, "err", err)
+		respondEphemeral(session, interaction, "☹️ couldn't find this challenge - it may have expired")
 		return
 	}
 

@@ -1,50 +1,65 @@
 package bot
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler"
 	"github.com/Joe-Hendley/dirtrallybot/internal/bot/handler/debug"
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/buildersession"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 	"github.com/bwmarrin/discordgo"
 )
 
-type bot struct {
-	cfg     config.Config
-	session *discordgo.Session
-	store   model.Store
+type Bot struct {
+	ctx      context.Context
+	cfg      config.Config
+	session  *discordgo.Session
+	store    port.Store
+	sessions *buildersession.Store
 }
 
-func New(cfg config.Config, store model.Store, session *discordgo.Session) (*bot, error) {
-
-	bot := &bot{
-		session: session,
-		store:   store,
+// New wires up the bot and registers its slash commands. ctx bounds the lifetime
+// of work started from interaction handlers; cancelling it unwinds in-flight
+// store operations at shutdown.
+func New(ctx context.Context, cfg config.Config, store port.Store, session *discordgo.Session) (*Bot, error) {
+	bot := &Bot{
+		ctx:      ctx,
+		cfg:      cfg,
+		session:  session,
+		store:    store,
+		sessions: buildersession.New(),
 	}
 
 	session.AddHandler(bot.HandleReady)
 	session.AddHandler(bot.HandleMessageCreate)
 	session.AddHandler(bot.HandleInteractionCreate)
 
-	CreateCommands(cfg, session)
+	if err := createCommands(cfg, session); err != nil {
+		return nil, fmt.Errorf("registering commands: %w", err)
+	}
 
 	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentGuildMessageReactions
 
 	return bot, nil
 }
 
-func (bot *bot) Shutdown() {
-	CleanupGuildCommands(bot.cfg, bot.session)
-	CleanupGlobalCommands(bot.cfg, bot.session)
+func (bot *Bot) Shutdown() error {
+	return errors.Join(
+		cleanupGuildCommands(bot.session),
+		cleanupGlobalCommands(bot.session),
+	)
 }
 
-func (bot *bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
+func (bot *Bot) HandleReady(s *discordgo.Session, r *discordgo.Ready) {
 	slog.Info("Bot is ready")
 }
 
-func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
+func (bot *Bot) HandleMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	if message.Author.ID == session.State.User.ID {
 		return
 	}
@@ -71,13 +86,13 @@ func (bot *bot) HandleMessageCreate(session *discordgo.Session, message *discord
 	}
 }
 
-func (bot *bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+func (bot *Bot) HandleInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	switch interaction.Type {
 	case discordgo.InteractionApplicationCommand:
 		handler.ApplicationCommand(session, interaction)
 	case discordgo.InteractionMessageComponent:
-		handler.InteractionMessageComponent(bot.store, session, interaction)
+		handler.InteractionMessageComponent(bot.ctx, bot.sessions, bot.store, session, interaction)
 	case discordgo.InteractionModalSubmit:
-		handler.ModalSubmit(bot.store, session, interaction)
+		handler.ModalSubmit(bot.ctx, bot.store, session, interaction)
 	}
 }

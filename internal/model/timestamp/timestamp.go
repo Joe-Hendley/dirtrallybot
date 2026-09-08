@@ -39,11 +39,15 @@ func Parse(s string) (time.Duration, error) {
 
 	milliseconds := 0
 	if msString != "" {
+		if len(msString) > 3 {
+			msString = msString[:3]
+		}
 		padded := msString + strings.Repeat("0", 3-len(msString))
+
 		milliseconds, err = strconv.Atoi(padded)
-	}
-	if err != nil {
-		return 0, fmt.Errorf("invalid timestamp %s: %v", s, err)
+		if err != nil {
+			return 0, fmt.Errorf("invalid timestamp %s: %v", s, err)
+		}
 	}
 
 	if milliseconds < 0 || milliseconds >= 1000 {
@@ -53,6 +57,7 @@ func Parse(s string) (time.Duration, error) {
 	return Build(minutes, seconds, milliseconds), nil
 }
 
+// Format renders a duration as mm:ss.mss, the inverse of Parse.
 func Format(duration time.Duration) string {
 	var (
 		minutes      = duration.Truncate(time.Minute)
@@ -60,9 +65,9 @@ func Format(duration time.Duration) string {
 		milliseconds = (duration - minutes - seconds).Truncate(time.Millisecond)
 	)
 
-	minuteComponent := fmt.Sprintf("%2.f", minutes.Minutes())
-	secondComponent := fmt.Sprintf("%02.f", seconds.Seconds())
-	millisecondComponent := fmt.Sprintf("%d", milliseconds.Milliseconds())
-
-	return minuteComponent + ":" + secondComponent + "." + millisecondComponent
+	return fmt.Sprintf("%d:%02d.%03d",
+		int64(minutes.Minutes()),
+		int64(seconds.Seconds()),
+		milliseconds.Milliseconds(),
+	)
 }

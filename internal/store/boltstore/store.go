@@ -2,12 +2,13 @@ package boltstore
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/model/challenge"
-	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore/internal/dto"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/dto"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -16,7 +17,7 @@ const ChallengeBucketID = "challenges"
 
 // TODO - implement some sort of backup like this https://github.com/treeder/bolt-backup/blob/master/backup.go
 
-var _ model.Store = &Store{}
+var _ port.Store = &Store{}
 
 type Store struct {
 	db *bolt.DB
@@ -49,7 +50,11 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) PutChallenge(challengeID string, challenge challenge.Model) error {
+func (s *Store) PutChallenge(ctx context.Context, challengeID string, challenge challenge.Model) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	dto := dto.FromChallenge(challenge)
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
@@ -66,11 +71,15 @@ func (s *Store) PutChallenge(challengeID string, challenge challenge.Model) erro
 	return err
 }
 
-func (s *Store) GetChallenge(challengeID string) (challenge.Model, error) {
+func (s *Store) GetChallenge(ctx context.Context, challengeID string) (challenge.Model, error) {
+	if err := ctx.Err(); err != nil {
+		return challenge.Model{}, err
+	}
+
 	dto := dto.Challenge{}
 
 	err := s.db.View(func(tx *bolt.Tx) error {
-		buf := tx.Bucket([]byte("challenges")).Get([]byte(challengeID))
+		buf := tx.Bucket([]byte(ChallengeBucketID)).Get([]byte(challengeID))
 		if buf == nil {
 			return fmt.Errorf("challenge %s not found", challengeID)
 		}
@@ -81,17 +90,25 @@ func (s *Store) GetChallenge(challengeID string) (challenge.Model, error) {
 	return dto.ToChallenge(), err
 }
 
-func (s *Store) DeleteChallenge(challengeID string) error {
+func (s *Store) DeleteChallenge(ctx context.Context, challengeID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte("challenges")).Delete([]byte(challengeID))
+		return tx.Bucket([]byte(ChallengeBucketID)).Delete([]byte(challengeID))
 	})
 
 	return err
 }
 
-func (s *Store) RegisterCompletion(challengeID string, completion challenge.Completion) error {
+func (s *Store) RegisterCompletion(ctx context.Context, challengeID string, completion challenge.Completion) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		buf := tx.Bucket([]byte("challenges")).Get([]byte(challengeID))
+		buf := tx.Bucket([]byte(ChallengeBucketID)).Get([]byte(challengeID))
 		if buf == nil {
 			return fmt.Errorf("challenge %s not found", challengeID)
 		}

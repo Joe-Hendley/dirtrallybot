@@ -4,14 +4,14 @@ import (
 	"errors"
 
 	"github.com/Joe-Hendley/dirtrallybot/internal/config"
-	"github.com/Joe-Hendley/dirtrallybot/internal/model"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/boltstore"
 	"github.com/Joe-Hendley/dirtrallybot/internal/store/memorystore"
+	"github.com/Joe-Hendley/dirtrallybot/internal/store/port"
 )
 
 const defaultBoltPath string = "rallybot.db"
 
-func New(cfg config.Config) (model.Store, error) {
+func New(cfg config.Config) (port.Store, error) {
 	switch cfg.Store {
 	case config.MEMORY:
 		return memorystore.New(), nil
