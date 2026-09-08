@@ -9,6 +9,8 @@ for [DiRT Rally 2.0](https://dirtrally2.dirtgame.com/) and
 [EA Sports WRC](https://www.ea.com/games/ea-sports-wrc), and tracks the times
 people set against each challenge.
 
+Originally handwritten, now slopwritten.
+
 ## Commands
 
 - `/newstage-dr2` — open the challenge builder for DiRT Rally 2.0
