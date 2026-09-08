@@ -45,4 +45,4 @@ make test     # go test ./...
 - `internal/randomiser` — challenge generation (deterministic, seeded)
 - `internal/store` — persistence (`port` interface, `boltstore`, `memorystore`)
 
-See `docs/` for the data model and the refactor checklist.
+See `docs/` for the data model and outstanding work.
