@@ -1,4 +1,4 @@
-name: golangci-lint
+name: test
 on:
   push:
     branches:
@@ -10,17 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  golangci:
-    name: lint
+  test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          cache: false
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          # Keep in step with the golangci-lint version used locally.
-          version: v2.13.2
+      - run: go test -race ./...

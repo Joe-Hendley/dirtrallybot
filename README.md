@@ -1,5 +1,9 @@
 # dirtrallybot
 
+[![test](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/test.yml/badge.svg)](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/test.yml)
+[![golangci-lint](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/golangci-lint.yml)
+[![verify](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/verify.yml/badge.svg)](https://github.com/Joe-Hendley/dirtrallybot/actions/workflows/verify.yml)
+
 A Discord bot that generates random rally challenges — a stage, weather and car —
 for [DiRT Rally 2.0](https://dirtrally2.dirtgame.com/) and
 [EA Sports WRC](https://www.ea.com/games/ea-sports-wrc), and tracks the times
