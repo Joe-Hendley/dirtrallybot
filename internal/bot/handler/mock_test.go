@@ -88,3 +88,8 @@ func (sm *storeMock) Popularity(_ context.Context) (popularity.Snapshot, error) 
 	args := sm.Called()
 	return args.Get(0).(popularity.Snapshot), args.Error(1)
 }
+
+// Close implements port.Store.
+func (sm *storeMock) Close() error {
+	return nil
+}

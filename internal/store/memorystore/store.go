@@ -29,6 +29,11 @@ func New() *Store {
 	}
 }
 
+// Close releases the store's resources. It is a no-op for the in-memory store.
+func (s *Store) Close() error {
+	return nil
+}
+
 func (s *Store) PutChallenge(ctx context.Context, id string, c challenge.Model) error {
 	if err := ctx.Err(); err != nil {
 		return err

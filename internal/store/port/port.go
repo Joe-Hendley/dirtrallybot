@@ -26,4 +26,8 @@ type Store interface {
 	// Popularity returns the current tally for every domain item that has been
 	// voted on.
 	Popularity(ctx context.Context) (popularity.Snapshot, error)
+
+	// Close releases the store's resources. The store must not be used
+	// afterwards.
+	Close() error
 }

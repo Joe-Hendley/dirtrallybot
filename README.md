@@ -55,8 +55,9 @@ cp default.env .env
 | `TESTSERVER` | guild ID where the `!cars` / `!stages` debug commands are allowed                 |
 | `RANDOMISER` | `biased` (default), `random`, or `deterministic` — how challenges are filled in   |
 | `WEBADDR`    | challenge viewer listen address (default `localhost:8080`); `off` disables it      |
+| `DBPATH`     | bbolt database file (default `rallybot.db`, relative to the working directory)      |
 
-Challenges are stored in a bbolt file (`rallybot.db`) by default.
+Challenges are stored in the bbolt file named by `DBPATH`.
 
 `biased` leans generation towards stages, cars and weather that have had good
 👍 / 👎 feedback; `random` picks uniformly; `deterministic` replays a fixed
@@ -75,6 +76,38 @@ make generate # regenerate the templ views after editing a .templ file
 `go install github.com/a-h/templ/cmd/templ@latest`. The generated
 `*_templ.go` files are committed, so this is only needed after editing a
 `.templ` file.
+
+## Docker
+
+The [`Dockerfile`](Dockerfile) builds a static binary on a distroless base
+(~12 MB, non-root). The image ships an empty `.env`, so every value is supplied
+through the environment instead — the keys are the same as
+[`default.env`](default.env). `DBPATH` is set to `/data/rallybot.db`, so mount
+a volume at `/data` to keep challenges across restarts.
+
+With [`docker-compose.yml`](docker-compose.yml) — put the real values in a
+local `.env` first, then:
+
+```
+docker compose up -d --build
+```
+
+It reads `.env`, forces `WEBADDR=:8080`, publishes the viewer on
+`http://localhost:8080` and persists the database in the `rallybot-data`
+volume.
+
+Without Compose:
+
+```
+docker build -t dirtrallybot .
+docker run -d --name dirtrallybot --restart unless-stopped \
+  --env-file .env -e WEBADDR=:8080 \
+  -p 8080:8080 -v rallybot-data:/data dirtrallybot
+```
+
+bbolt takes an exclusive lock on the database file: run only one container
+against a given volume, and prefer a local named volume over a bind mount to a
+networked filesystem (NFS and the like break bbolt's file locking).
 
 ## Layout
 
